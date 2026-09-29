@@ -94,12 +94,33 @@ private struct CategoryTransactionsView: View {
     let category: LedgerCategory
     let range: ReportRange
     @State private var editingTransaction: LedgerTransaction?
+    @State private var sortOrder: CategoryTransactionSort = .newest
+
+    private enum CategoryTransactionSort: String, CaseIterable, Identifiable {
+        case newest = "日期：最新優先"
+        case oldest = "日期：最舊優先"
+        case highestAmount = "金額：最高優先"
+        case lowestAmount = "金額：最低優先"
+
+        var id: String { rawValue }
+    }
 
     private var transactions: [LedgerTransaction] {
         let start = range.startDate()
-        return store.transactions
+        let filtered = store.transactions
             .filter { $0.kind == .expense && $0.category == category && $0.date >= start }
-            .sorted { $0.date > $1.date }
+        return filtered.sorted { left, right in
+            switch sortOrder {
+            case .newest:
+                left.date > right.date
+            case .oldest:
+                left.date < right.date
+            case .highestAmount:
+                left.amountMinor > right.amountMinor
+            case .lowestAmount:
+                left.amountMinor < right.amountMinor
+            }
+        }
     }
 
     private var total: Int64 {
@@ -136,6 +157,19 @@ private struct CategoryTransactionsView: View {
         .listStyle(.plain)
         .navigationTitle(category.title)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Picker("排序方式", selection: $sortOrder) {
+                        ForEach(CategoryTransactionSort.allCases) { order in
+                            Text(order.rawValue).tag(order)
+                        }
+                    }
+                } label: {
+                    Label("排序", systemImage: "arrow.up.arrow.down")
+                }
+            }
+        }
         .sheet(item: $editingTransaction) { transaction in
             NavigationStack { TransactionEditorView(transaction: transaction) }
         }

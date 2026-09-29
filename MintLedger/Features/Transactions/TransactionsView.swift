@@ -62,44 +62,44 @@ struct TransactionsView: View {
                 EmptyStateView(symbol: "magnifyingglass", title: "找不到交易", message: searchText.isEmpty ? "新增一筆收入或支出" : "試試其他搜尋字詞")
             } else if let group = displayedMonthGroup {
                 List {
-                    Section {
-                        ForEach(group.dayGroups) { dayGroup in
-                            Section {
-                                ForEach(dayGroup.items) { transaction in
-                                    transactionButton(transaction)
-                                        .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
-                                        .listRowSeparator(.hidden)
-                                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                            if !isSelecting {
-                                                Button(role: .destructive) { store.deleteTransactions(ids: Set([transaction.id])) } label: {
-                                                    Label("刪除", systemImage: "trash")
-                                                }
+                    MonthSummaryHeader(
+                        group: group,
+                        currencyCode: store.snapshot.currencyCode,
+                        canShowNewerMonth: canMoveMonth(by: -1),
+                        canShowOlderMonth: canMoveMonth(by: 1),
+                        showNewerMonth: { moveMonth(by: -1) },
+                        showOlderMonth: { moveMonth(by: 1) }
+                    )
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 8, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    // 只讓月份摘要處理水平滑動，交易列保留系統的左滑刪除手勢。
+                    .gesture(
+                        DragGesture(minimumDistance: 20)
+                            .onEnded { value in
+                                guard abs(value.translation.width) > abs(value.translation.height), abs(value.translation.width) > 48 else { return }
+                                moveMonth(by: value.translation.width < 0 ? 1 : -1)
+                            }
+                    )
+
+                    ForEach(group.dayGroups) { dayGroup in
+                        Section {
+                            ForEach(dayGroup.items) { transaction in
+                                transactionButton(transaction)
+                                    .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+                                    .listRowSeparator(.hidden)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                        if !isSelecting {
+                                            Button(role: .destructive) { store.deleteTransactions(ids: Set([transaction.id])) } label: {
+                                                Label("刪除", systemImage: "trash")
                                             }
                                         }
-                                }
-                            } header: {
-                                DaySummaryHeader(group: dayGroup, currencyCode: store.snapshot.currencyCode)
-                                    .textCase(nil)
+                                    }
                             }
+                        } header: {
+                            DaySummaryHeader(group: dayGroup, currencyCode: store.snapshot.currencyCode)
+                                .textCase(nil)
                         }
-                    } header: {
-                        MonthSummaryHeader(
-                            group: group,
-                            currencyCode: store.snapshot.currencyCode,
-                            canShowNewerMonth: canMoveMonth(by: -1),
-                            canShowOlderMonth: canMoveMonth(by: 1),
-                            showNewerMonth: { moveMonth(by: -1) },
-                            showOlderMonth: { moveMonth(by: 1) }
-                        )
-                        .textCase(nil)
-                        // 只讓月份標題處理水平滑動，交易列保留系統的左滑刪除手勢。
-                        .gesture(
-                            DragGesture(minimumDistance: 20)
-                                .onEnded { value in
-                                    guard abs(value.translation.width) > abs(value.translation.height), abs(value.translation.width) > 48 else { return }
-                                    moveMonth(by: value.translation.width < 0 ? 1 : -1)
-                                }
-                        )
                     }
                 }
                 .listStyle(.plain)
@@ -241,13 +241,11 @@ private struct MonthSummaryHeader: View {
                     .disabled(!canShowOlderMonth)
                     .accessibilityLabel("查看較舊的月份")
             }
-            HStack(spacing: 12) {
-                Text("收入 \(group.incomeMinor.currency(code: currencyCode))").foregroundStyle(.green)
-                Text("支出 \(group.expenseMinor.currency(code: currencyCode))").foregroundStyle(.red)
-                Spacer()
-                Text("淨額 \((group.incomeMinor - group.expenseMinor).currency(code: currencyCode))")
+            HStack(spacing: 8) {
+                MonthlyMetricCard(title: "收入", amount: group.incomeMinor, icon: "arrow.down.left", color: .green, currencyCode: currencyCode)
+                MonthlyMetricCard(title: "支出", amount: group.expenseMinor, icon: "arrow.up.right", color: .red, currencyCode: currencyCode)
+                MonthlyMetricCard(title: "淨額", amount: group.incomeMinor - group.expenseMinor, icon: "equal", color: .mintLedger, currencyCode: currencyCode)
             }
-            .font(.caption)
             MonthSummaryChart(group: group)
                 .frame(height: 115)
                 .accessibilityLabel("\(group.month.ledgerMonthText) 收入、支出與淨額圖表")
@@ -256,6 +254,34 @@ private struct MonthSummaryHeader: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
+    }
+}
+
+private struct MonthlyMetricCard: View {
+    let title: String
+    let amount: Int64
+    let icon: String
+    let color: Color
+    let currencyCode: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(color)
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(amount.currency(code: currencyCode))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .monospacedDigit()
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, minHeight: 78, alignment: .leading)
+        .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
