@@ -40,7 +40,7 @@ struct GlassAddButton: View {
             Button(action: action) {
                 Image(systemName: "plus")
                     .font(.title2.bold())
-                    .foregroundStyle(.midnight)
+                    .foregroundStyle(Color.midnight)
                     .frame(width: 56, height: 56)
                     .background(Color.mintLedger, in: Circle())
                     .shadow(radius: 10, y: 5)

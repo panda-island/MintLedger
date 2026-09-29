@@ -90,7 +90,7 @@ private struct BalanceHero: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .fill(LinearGradient(colors: [.midnight, Color(red: 0.03, green: 0.24, blue: 0.30)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .fill(LinearGradient(colors: [Color.midnight, Color(red: 0.03, green: 0.24, blue: 0.30)], startPoint: .topLeading, endPoint: .bottomTrailing))
             Circle().fill(Color.mintLedger.opacity(0.22)).frame(width: 150).offset(x: 40, y: 55)
             VStack(alignment: .leading, spacing: 8) {
                 Label("總資產", systemImage: "wallet.pass.fill").foregroundStyle(.white.opacity(0.72))
