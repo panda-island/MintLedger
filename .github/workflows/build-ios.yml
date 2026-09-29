@@ -1,0 +1,79 @@
+name: Build sideloadable IPA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Select an available iPhone simulator
+        shell: bash
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin)["devices"]; print(next(x["udid"] for runtime in d.values() for x in runtime if x["name"].startswith("iPhone")))')
+          echo "SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
+
+      - name: Run unit tests
+        run: >-
+          xcodebuild test
+          -project MintLedger.xcodeproj
+          -scheme MintLedger
+          -destination "platform=iOS Simulator,id=${SIMULATOR_ID}"
+          -resultBundlePath build/TestResults.xcresult
+          CODE_SIGNING_ALLOWED=NO
+
+      - name: Build unsigned device app
+        run: >-
+          xcodebuild build
+          -project MintLedger.xcodeproj
+          -scheme MintLedger
+          -configuration Release
+          -sdk iphoneos
+          -destination "generic/platform=iOS"
+          -derivedDataPath build/DerivedData
+          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO
+
+      - name: Package IPA for AltStore or Sideloadly
+        shell: bash
+        run: |
+          mkdir -p build/Payload
+          ditto "build/DerivedData/Build/Products/Release-iphoneos/MintLedger.app" "build/Payload/MintLedger.app"
+          cd build
+          zip -qry MintLedger-unsigned.ipa Payload
+          shasum -a 256 MintLedger-unsigned.ipa > MintLedger-unsigned.ipa.sha256
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: MintLedger-unsigned-ipa
+          path: |
+            build/MintLedger-unsigned.ipa
+            build/MintLedger-unsigned.ipa.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults
+          path: build/TestResults.xcresult
+          if-no-files-found: ignore
+
