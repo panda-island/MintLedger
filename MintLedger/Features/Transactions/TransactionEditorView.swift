@@ -66,19 +66,16 @@ struct TransactionEditorView: View {
                     .textSelection(.enabled)
             }
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if amountFocused {
+                AmountKeyboardAccessory(expression: $amountText, finishCalculation: finishCalculation)
+            }
+        }
         .navigationTitle("編輯明細")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
             ToolbarItem(placement: .confirmationAction) { Button("儲存") { save() }.disabled(amountMinor == nil) }
-            ToolbarItemGroup(placement: .keyboard) {
-                ForEach(["+", "−", "×", "÷"], id: \.self) { operation in
-                    Button(operation) { amountText = AmountExpression.appending(operation, to: amountText) }
-                }
-                Spacer()
-                Button { finishCalculation() } label: { Image(systemName: "checkmark.circle.fill").font(.title3) }
-                    .accessibilityLabel("計算並收起鍵盤")
-            }
         }
     }
 

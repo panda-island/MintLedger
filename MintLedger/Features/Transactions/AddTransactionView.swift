@@ -54,19 +54,16 @@ struct AddTransactionView: View {
                 TextField("備註（選填）", text: $note)
             }
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if amountFocused {
+                AmountKeyboardAccessory(expression: $amountText, finishCalculation: finishCalculation)
+            }
+        }
         .navigationTitle(kind == .expense ? "新增支出" : "新增收入")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
             ToolbarItem(placement: .confirmationAction) { Button("儲存") { save() }.disabled(amountMinor == nil || store.snapshot.accounts.isEmpty) }
-            ToolbarItemGroup(placement: .keyboard) {
-                ForEach(["+", "−", "×", "÷"], id: \.self) { operation in
-                    Button(operation) { amountText = AmountExpression.appending(operation, to: amountText) }
-                }
-                Spacer()
-                Button { finishCalculation() } label: { Image(systemName: "checkmark.circle.fill").font(.title3) }
-                    .accessibilityLabel("計算並收起鍵盤")
-            }
         }
         .onAppear { accountID = accountID ?? store.snapshot.accounts.first?.id; amountFocused = true }
     }
@@ -84,5 +81,35 @@ struct AddTransactionView: View {
     private func finishCalculation() {
         if let value = AmountExpression.evaluate(amountText) { amountText = AmountExpression.formatted(value) }
         amountFocused = false
+    }
+}
+
+struct AmountKeyboardAccessory: View {
+    @Binding var expression: String
+    let finishCalculation: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ForEach(["+", "−", "×", "÷"], id: \.self) { operation in
+                Button(operation) {
+                    expression = AmountExpression.appending(operation, to: expression)
+                }
+                .font(.headline)
+                .frame(maxWidth: .infinity, minHeight: 36)
+                .buttonStyle(.bordered)
+                .accessibilityLabel("加入 \(operation) 運算")
+            }
+            Button(action: finishCalculation) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title3)
+                    .frame(minWidth: 38, minHeight: 36)
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityLabel("計算並收起鍵盤")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.bar)
+        .accessibilityElement(children: .contain)
     }
 }

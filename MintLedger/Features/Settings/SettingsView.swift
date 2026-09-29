@@ -49,7 +49,7 @@ struct SettingsView: View {
         .navigationTitle("設定")
         .fileExporter(isPresented: $exportingBackup, document: exportDocument, contentType: .mintLedgerBackup, defaultFilename: "MintLedger-Backup") { result in report(result, success: "備份已匯出") }
         .fileExporter(isPresented: $exportingCSV, document: csvDocument, contentType: .commaSeparatedText, defaultFilename: "MintLedger-Transactions") { result in report(result, success: "CSV 已匯出") }
-        .fileImporter(isPresented: $importing, allowedContentTypes: [.mintLedgerBackup, .json, .data]) { result in importBackup(result) }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.item]) { result in importBackup(result) }
         .alert("MintLedger", isPresented: Binding(get: { statusMessage != nil }, set: { if !$0 { statusMessage = nil } })) {
             Button("好") { statusMessage = nil }
         } message: { Text(statusMessage ?? "") }
@@ -65,7 +65,9 @@ struct SettingsView: View {
             let url = try result.get()
             try store.importBackup(BackupFileReader.read(from: url))
             statusMessage = "還原完成，共匯入 \(store.snapshot.transactions.count) 筆明細"
-        } catch { statusMessage = "還原失敗：\(error.localizedDescription)" }
+        } catch {
+            statusMessage = "還原失敗：請確認選取的是 MintLedger 匯出的 .mintledger 備份檔。\n\(error.localizedDescription)"
+        }
     }
 
     private var appVersion: String {

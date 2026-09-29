@@ -49,10 +49,15 @@ final class MintLedgerTests: XCTestCase {
     func testBackupFileTypeIsJSONWithExpectedExtension() {
         XCTAssertTrue(UTType.mintLedgerBackup.conforms(to: .json))
         XCTAssertEqual(UTType.mintLedgerBackup.preferredFilenameExtension, "mintledger")
+        XCTAssertTrue(UTType.mintLedgerBackup.conforms(to: .item))
     }
 
     func testWidgetUsesTheSameSharedLedgerLocation() throws {
         XCTAssertEqual(SharedLedgerStorage.widgetKind, "MintLedgerSummaryWidget")
         XCTAssertEqual(try SharedLedgerStorage.dataURL().lastPathComponent, "ledger-v1.json")
+    }
+
+    func testAppendingAnOperatorReplacesThePreviousOperator() {
+        XCTAssertEqual(AmountExpression.appending("×", to: "100+"), "100×")
     }
 }
