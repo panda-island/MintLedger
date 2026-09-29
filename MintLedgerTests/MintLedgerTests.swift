@@ -57,7 +57,22 @@ final class MintLedgerTests: XCTestCase {
         XCTAssertEqual(try SharedLedgerStorage.dataURL().lastPathComponent, "ledger-v1.json")
     }
 
+    func testWidgetUsesTheSameAppGroupAsTheMainApp() {
+        XCTAssertEqual(SharedLedgerStorage.appGroupID, "group.063105cc445c1ae9.1")
+    }
+
     func testAppendingAnOperatorReplacesThePreviousOperator() {
         XCTAssertEqual(AmountExpression.appending("×", to: "100+"), "100×")
+    }
+
+    func testLedgerDateFormattingUsesChineseMonthsAndTimePeriods() {
+        let date = Date(timeIntervalSince1970: 1_790_000_000)
+        XCTAssertTrue(date.ledgerMonthText.contains("月"))
+        XCTAssertTrue(date.ledgerDateTimeText.contains("年"))
+        XCTAssertTrue(date.ledgerDateTimeText.contains("月"))
+        XCTAssertTrue(date.ledgerDateTimeText.contains("日"))
+        XCTAssertTrue(date.ledgerDateTimeText.contains("點"))
+        XCTAssertFalse(date.ledgerDateTimeText.localizedCaseInsensitiveContains("AM"))
+        XCTAssertFalse(date.ledgerDateTimeText.localizedCaseInsensitiveContains("PM"))
     }
 }

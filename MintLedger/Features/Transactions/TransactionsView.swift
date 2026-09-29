@@ -158,7 +158,7 @@ private struct MonthSummaryHeader: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(group.month.formatted(.dateTime.year().month(.wide)))
+            Text(group.month.ledgerMonthText)
                 .font(.headline)
                 .foregroundStyle(.primary)
             HStack(spacing: 12) {
