@@ -42,7 +42,7 @@ struct RecordTransactionIntent: AppIntent {
     @Parameter(title: "備註", default: "") var note: String
 
     static var parameterSummary: some ParameterSummary {
-        Summary("記錄\(.$kind) \(.$amount) 元於 \(.$category)") { \.$account; \.$note }
+        Summary("記錄 \(\.$kind) \(\.$amount) 元於 \(\.$category)") { \.$account; \.$note }
     }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
@@ -75,4 +75,3 @@ struct MintLedgerShortcuts: AppShortcutsProvider {
         )
     }
 }
-
