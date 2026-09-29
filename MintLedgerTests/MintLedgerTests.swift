@@ -64,4 +64,15 @@ final class MintLedgerTests: XCTestCase {
     func testAppendingAnOperatorReplacesThePreviousOperator() {
         XCTAssertEqual(AmountExpression.appending("×", to: "100+"), "100×")
     }
+
+    func testLedgerDateFormattingUsesChineseMonthsAndTimePeriods() {
+        let date = Date(timeIntervalSince1970: 1_790_000_000)
+        XCTAssertTrue(date.ledgerMonthText.contains("月"))
+        XCTAssertTrue(date.ledgerDateTimeText.contains("年"))
+        XCTAssertTrue(date.ledgerDateTimeText.contains("月"))
+        XCTAssertTrue(date.ledgerDateTimeText.contains("日"))
+        XCTAssertTrue(date.ledgerDateTimeText.contains("點"))
+        XCTAssertFalse(date.ledgerDateTimeText.localizedCaseInsensitiveContains("AM"))
+        XCTAssertFalse(date.ledgerDateTimeText.localizedCaseInsensitiveContains("PM"))
+    }
 }

@@ -23,6 +23,7 @@ struct RootView: View {
             }
         }
         .tint(Color.mintLedger)
+        .environment(\.locale, Locale(identifier: "zh_TW"))
         .sheet(item: $presentedSheet) { destination in
             switch destination {
             case .addTransaction:

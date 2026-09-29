@@ -60,7 +60,7 @@ struct TransactionEditorView: View {
             }
 
             Section("記錄資訊") {
-                LabeledContent("建立時間", value: original.createdAt.formatted(date: .abbreviated, time: .shortened))
+                LabeledContent("建立時間", value: original.createdAt.ledgerDateTimeText)
                 LabeledContent("識別碼", value: original.id.uuidString)
                     .font(.caption)
                     .textSelection(.enabled)

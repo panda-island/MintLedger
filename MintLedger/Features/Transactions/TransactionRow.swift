@@ -13,7 +13,7 @@ struct TransactionRow: View {
                 .background(Color.mintLedger.opacity(0.12), in: Circle())
             VStack(alignment: .leading, spacing: 3) {
                 Text(transaction.note.isEmpty ? transaction.category.title : transaction.note).font(.body.weight(.medium)).lineLimit(1)
-                Text("\(transaction.category.title) · \(transaction.date.formatted(date: .abbreviated, time: .shortened))")
+                Text("\(transaction.category.title) · \(transaction.date.ledgerDateTimeText)")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
