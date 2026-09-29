@@ -1,4 +1,3 @@
-import AppIntents
 import SwiftUI
 import WidgetKit
 
@@ -22,48 +21,70 @@ struct LedgerWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: LedgerEntry
 
-    private var monthExpenses: Int64 {
-        entry.snapshot.transactions.filter { $0.kind == .expense && Calendar.current.isDate($0.date, equalTo: .now, toGranularity: .month) }.reduce(0) { $0 + $1.amountMinor }
-    }
     private var balance: Int64 {
         entry.snapshot.accounts.reduce(0) { $0 + $1.openingBalanceMinor } + entry.snapshot.transactions.reduce(0) { $0 + $1.signedAmountMinor }
+    }
+    private var recentTransactions: [LedgerTransaction] {
+        Array(entry.snapshot.transactions.sorted { $0.date > $1.date }.prefix(3))
     }
 
     var body: some View {
         switch family {
-        case .accessoryCircular:
-            VStack(spacing: 1) { Image(systemName: "wallet.pass.fill"); Text(compact(monthExpenses)).font(.caption2).monospacedDigit() }
-                .accessibilityLabel("本月支出 \(monthExpenses.currency(code: entry.snapshot.currencyCode))")
         case .accessoryRectangular:
-            VStack(alignment: .leading, spacing: 2) {
-                Label("本月支出", systemImage: "chart.line.downtrend.xyaxis")
-                Text(monthExpenses.currency(code: entry.snapshot.currencyCode)).font(.headline).monospacedDigit()
-                Text("餘額 \(balance.currency(code: entry.snapshot.currencyCode))").font(.caption2)
+            VStack(alignment: .leading, spacing: 3) {
+                Label("總資產", systemImage: "wallet.pass.fill")
+                    .font(.caption.weight(.semibold))
+                Text(balance.currency(code: entry.snapshot.currencyCode))
+                    .font(.headline)
+                    .monospacedDigit()
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
         default:
-            VStack(alignment: .leading, spacing: 10) {
-                HStack { Label("MintLedger", systemImage: "wallet.pass.fill").font(.headline); Spacer(); Text(entry.date, style: .time).font(.caption2).foregroundStyle(.secondary) }
-                Text("本月支出").font(.caption).foregroundStyle(.secondary)
-                Text(monthExpenses.currency(code: entry.snapshot.currencyCode)).font(.title2.bold()).monospacedDigit()
-                HStack(spacing: 8) {
-                    quickButton(50)
-                    quickButton(100)
-                    quickButton(200)
+            HStack(spacing: 18) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Label("總資產", systemImage: "wallet.pass.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(balance.currency(code: entry.snapshot.currencyCode))
+                        .font(.title2.bold())
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                        .monospacedDigit()
+                    Spacer()
+                    Text("MintLedger")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                VStack(alignment: .leading, spacing: 7) {
+                    Text("近期明細").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    if recentTransactions.isEmpty {
+                        Spacer()
+                        Text("尚無交易").font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                    } else {
+                        ForEach(recentTransactions) { transaction in
+                            HStack(spacing: 6) {
+                                Image(systemName: transaction.category.symbol)
+                                    .frame(width: 16)
+                                Text(transaction.note.isEmpty ? transaction.category.title : transaction.note)
+                                    .font(.caption)
+                                    .lineLimit(1)
+                                Spacer(minLength: 2)
+                                Text(transaction.amountMinor.currency(code: entry.snapshot.currencyCode))
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(transaction.kind == .income ? .green : .red)
+                                    .monospacedDigit()
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
+            .accessibilityElement(children: .combine)
         }
-    }
-
-    private func quickButton(_ amount: Double) -> some View {
-        Button(intent: QuickExpenseIntent(amount: amount)) {
-            Text("+\(Int(amount))").font(.caption.bold()).frame(maxWidth: .infinity).padding(.vertical, 5)
-        }.buttonStyle(.bordered)
-    }
-
-    private func compact(_ value: Int64) -> String {
-        let whole = Double(value) / 100
-        if whole >= 10_000 { return String(format: "%.0f萬", whole / 10_000) }
-        return String(format: "%.0f", whole)
     }
 }
 
@@ -75,9 +96,9 @@ struct MintLedgerSummaryWidget: Widget {
                 .containerBackground(for: .widget) { LinearGradient(colors: [Color(red: 0.03, green: 0.12, blue: 0.22), Color(red: 0.05, green: 0.28, blue: 0.27)], startPoint: .topLeading, endPoint: .bottomTrailing) }
                 .foregroundStyle(.white)
         }
-        .configurationDisplayName("MintLedger 摘要")
-        .description("查看支出與餘額，或直接快速記帳。")
-        .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular])
+        .configurationDisplayName("MintLedger 資產")
+        .description("在鎖定畫面查看總資產，或在桌面查看總資產與近期明細。")
+        .supportedFamilies([.systemMedium, .accessoryRectangular])
     }
 }
 
@@ -85,4 +106,3 @@ struct MintLedgerSummaryWidget: Widget {
 struct MintLedgerWidgetBundle: WidgetBundle {
     var body: some Widget { MintLedgerSummaryWidget() }
 }
-

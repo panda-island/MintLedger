@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum AppTab: Hashable {
-    case dashboard, transactions, budgets, reports, settings
+    case dashboard, transactions, reports, settings
 }
 
 struct RootView: View {
@@ -47,7 +47,6 @@ struct RootView: View {
         TabView(selection: $selectedTab) {
             Tab("總覽", systemImage: "rectangle.3.group.fill", value: .dashboard) { NavigationStack { DashboardView() } }
             Tab("明細", systemImage: "list.bullet.rectangle", value: .transactions) { NavigationStack { TransactionsView() } }
-            Tab("預算", systemImage: "gauge.with.dots.needle.50percent", value: .budgets) { NavigationStack { BudgetsView() } }
             Tab("分析", systemImage: "chart.bar.xaxis", value: .reports) { NavigationStack { ReportsView() } }
             Tab("設定", systemImage: "gearshape.fill", value: .settings) { NavigationStack { SettingsView() } }
         }
@@ -57,10 +56,8 @@ struct RootView: View {
         TabView(selection: $selectedTab) {
             NavigationStack { DashboardView() }.tabItem { Label("總覽", systemImage: "rectangle.3.group.fill") }.tag(AppTab.dashboard)
             NavigationStack { TransactionsView() }.tabItem { Label("明細", systemImage: "list.bullet.rectangle") }.tag(AppTab.transactions)
-            NavigationStack { BudgetsView() }.tabItem { Label("預算", systemImage: "gauge.with.dots.needle.50percent") }.tag(AppTab.budgets)
             NavigationStack { ReportsView() }.tabItem { Label("分析", systemImage: "chart.bar.xaxis") }.tag(AppTab.reports)
             NavigationStack { SettingsView() }.tabItem { Label("設定", systemImage: "gearshape.fill") }.tag(AppTab.settings)
         }
     }
 }
-

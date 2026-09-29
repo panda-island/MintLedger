@@ -11,6 +11,18 @@ final class LedgerStore {
 
     init() {
         reload()
+        CFNotificationCenterAddObserver(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            Unmanaged.passUnretained(self).toOpaque(),
+            { _, observer, _, _, _ in
+                guard let observer else { return }
+                let store = Unmanaged<LedgerStore>.fromOpaque(observer).takeUnretainedValue()
+                Task { @MainActor in store.reload() }
+            },
+            SharedLedgerStorage.darwinNotificationName,
+            nil,
+            .deliverImmediately
+        )
     }
 
     var transactions: [LedgerTransaction] {
@@ -68,11 +80,16 @@ final class LedgerStore {
         persist()
     }
 
-    func upsertBudget(category: LedgerCategory, limitMinor: Int64) {
-        if let index = snapshot.budgets.firstIndex(where: { $0.category == category }) {
-            snapshot.budgets[index].limitMinor = limitMinor
-        } else {
-            snapshot.budgets.append(Budget(category: category, limitMinor: limitMinor))
+    func updateTransaction(_ transaction: LedgerTransaction) {
+        guard let index = snapshot.transactions.firstIndex(where: { $0.id == transaction.id }) else { return }
+        snapshot.transactions[index] = transaction
+        persist()
+    }
+
+    func changeCategory(for ids: Set<UUID>, to category: LedgerCategory) {
+        guard !ids.isEmpty else { return }
+        for index in snapshot.transactions.indices where ids.contains(snapshot.transactions[index].id) {
+            snapshot.transactions[index].category = category
         }
         persist()
     }
@@ -158,4 +175,3 @@ final class LedgerStore {
         return Calendar.current.date(byAdding: component, value: 1, to: date) ?? date.addingTimeInterval(86_400)
     }
 }
-

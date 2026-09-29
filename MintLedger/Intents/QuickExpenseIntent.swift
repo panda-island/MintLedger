@@ -3,12 +3,12 @@ import Foundation
 import WidgetKit
 
 enum IntentCategory: String, AppEnum {
-    case food, transport, shopping, housing, entertainment, health, education, salary, investment, travel, other
+    case food, transport, shopping, housing, entertainment, health, education, salary, allowance, investment, travel, other
 
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "分類"
     static let caseDisplayRepresentations: [IntentCategory: DisplayRepresentation] = [
         .food: "餐飲", .transport: "交通", .shopping: "購物", .housing: "居家",
-        .entertainment: "娛樂", .health: "醫療", .education: "學習", .salary: "薪資",
+        .entertainment: "娛樂", .health: "醫療", .education: "學習", .salary: "薪資", .allowance: "零用錢",
         .investment: "投資", .travel: "旅遊", .other: "其他"
     ]
 
@@ -45,4 +45,3 @@ struct QuickExpenseIntent: AppIntent {
         return .result(dialog: "已記錄 \(amount) 元支出")
     }
 }
-

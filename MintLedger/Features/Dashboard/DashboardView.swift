@@ -1,15 +1,29 @@
 import Charts
 import SwiftUI
 
+private struct DailyExpense: Identifiable {
+    let date: Date
+    let amount: Double
+    var id: Date { date }
+}
+
 struct DashboardView: View {
     @Environment(LedgerStore.self) private var store
 
-    private var dailyExpenses: [(date: Date, amount: Double)] {
+    private var dailyExpenses: [DailyExpense] {
         let calendar = Calendar.current
-        let grouped = Dictionary(grouping: store.currentMonthTransactions.filter { $0.kind == .expense }) {
-            calendar.startOfDay(for: $0.date)
+        guard let interval = calendar.dateInterval(of: .month, for: .now) else { return [] }
+        let totals = Dictionary(grouping: store.currentMonthTransactions.filter { $0.kind == .expense }) { calendar.startOfDay(for: $0.date) }
+            .mapValues { items in items.reduce(Int64.zero) { $0 + $1.amountMinor } }
+        let lastDay = min(calendar.startOfDay(for: .now), interval.end.addingTimeInterval(-1))
+        var day = interval.start
+        var result: [DailyExpense] = []
+        while day <= lastDay {
+            result.append(DailyExpense(date: day, amount: Double(totals[day, default: 0]) / 100))
+            guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+            day = next
         }
-        return grouped.map { ($0.key, Double($0.value.reduce(0) { $0 + $1.amountMinor }) / 100) }.sorted { $0.date < $1.date }
+        return result
     }
 
     var body: some View {
@@ -52,17 +66,26 @@ struct DashboardView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 12) {
                 Text("本月支出趨勢").font(.headline)
-                if dailyExpenses.isEmpty {
+                if store.monthExpenseMinor == 0 {
                     Text("新增支出後會顯示趨勢").foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 130)
                 } else {
-                    Chart(dailyExpenses, id: \.date) { item in
-                        AreaMark(x: .value("日期", item.date), y: .value("支出", item.amount))
-                            .foregroundStyle(LinearGradient(colors: [Color.mintLedger.opacity(0.7), Color.mintLedger.opacity(0.05)], startPoint: .top, endPoint: .bottom))
-                        LineMark(x: .value("日期", item.date), y: .value("支出", item.amount))
-                            .foregroundStyle(Color.mintLedger).interpolationMethod(.catmullRom)
+                    Chart(dailyExpenses) { item in
+                        BarMark(
+                            x: .value("日期", item.date, unit: .day),
+                            y: .value("每日支出", item.amount)
+                        )
+                        .foregroundStyle(Color.mintLedger.gradient)
+                        .cornerRadius(3)
                     }
                     .frame(height: 150)
-                    .chartXAxis(.hidden)
+                    .chartXAxis {
+                        AxisMarks(values: .stride(by: .day, count: 5)) {
+                            AxisGridLine()
+                            AxisTick()
+                            AxisValueLabel(format: .dateTime.day())
+                        }
+                    }
+                    .chartYAxis { AxisMarks(position: .leading) }
                     .accessibilityLabel("本月每日支出趨勢")
                 }
             }

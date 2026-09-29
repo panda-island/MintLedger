@@ -3,6 +3,9 @@ import Foundation
 enum SharedLedgerStorage {
     static let appGroupID = "group.com.a0973.MintLedger"
     static let filename = "ledger-v1.json"
+    static var darwinNotificationName: CFNotificationName {
+        CFNotificationName(rawValue: "com.a0973.MintLedger.dataChanged" as CFString)
+    }
 
     static func dataURL(fileManager: FileManager = .default) throws -> URL {
         if let group = fileManager.containerURL(forSecurityApplicationGroupIdentifier: appGroupID) {
@@ -41,6 +44,13 @@ enum SharedLedgerStorage {
         try? FileManager.default.setAttributes(
             [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication],
             ofItemAtPath: url.path
+        )
+        CFNotificationCenterPostNotification(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            darwinNotificationName,
+            nil,
+            nil,
+            true
         )
     }
 

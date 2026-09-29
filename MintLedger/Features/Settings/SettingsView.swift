@@ -3,7 +3,6 @@ import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(LedgerStore.self) private var store
-    @AppStorage("appLockEnabled") private var appLockEnabled = false
     @State private var exportDocument = BackupDocument()
     @State private var csvDocument = CSVDocument(data: Data())
     @State private var exportingBackup = false
@@ -14,8 +13,7 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("隱私與安全") {
-                Toggle(isOn: $appLockEnabled) { Label("Face ID／密碼鎖", systemImage: "faceid") }
+            Section("隱私") {
                 Label("完全離線，沒有帳號也不會上傳雲端", systemImage: "hand.raised.fill").foregroundStyle(.secondary)
             }
             Section("本機備份") {
@@ -37,7 +35,7 @@ struct SettingsView: View {
                 Label("桌面與鎖定畫面小工具", systemImage: "square.grid.2x2")
             }
             Section("關於") {
-                LabeledContent("版本", value: "1.0.0")
+                LabeledContent("版本", value: "1.1.0")
                 LabeledContent("資料格式", value: "MintLedger v1 JSON")
             }
         }

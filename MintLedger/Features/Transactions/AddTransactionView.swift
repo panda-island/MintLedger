@@ -12,8 +12,8 @@ struct AddTransactionView: View {
     @FocusState private var amountFocused: Bool
 
     private var amountMinor: Int64? {
-        guard let value = Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")), value > 0 else { return nil }
-        return NSDecimalNumber(decimal: value * 100).int64Value
+        guard let value = AmountExpression.evaluate(amountText) else { return nil }
+        return Int64((value * 100).rounded())
     }
 
     var body: some View {
@@ -59,6 +59,14 @@ struct AddTransactionView: View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
             ToolbarItem(placement: .confirmationAction) { Button("儲存") { save() }.disabled(amountMinor == nil || store.snapshot.accounts.isEmpty) }
+            ToolbarItemGroup(placement: .keyboard) {
+                ForEach(["+", "−", "×", "÷"], id: \.self) { operation in
+                    Button(operation) { amountText = AmountExpression.appending(operation, to: amountText) }
+                }
+                Spacer()
+                Button { finishCalculation() } label: { Image(systemName: "checkmark.circle.fill").font(.title3) }
+                    .accessibilityLabel("計算並收起鍵盤")
+            }
         }
         .onAppear { accountID = accountID ?? store.snapshot.accounts.first?.id; amountFocused = true }
     }
@@ -72,5 +80,9 @@ struct AddTransactionView: View {
         store.addTransaction(kind: kind, amountMinor: amountMinor, category: category, accountID: accountID, note: note, date: date)
         dismiss()
     }
-}
 
+    private func finishCalculation() {
+        if let value = AmountExpression.evaluate(amountText) { amountText = AmountExpression.formatted(value) }
+        amountFocused = false
+    }
+}

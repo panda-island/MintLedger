@@ -11,7 +11,6 @@
   <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
   <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
   <key>UILaunchScreen</key><dict><key>UIColorName</key><string>AccentColor</string></dict>
-  <key>NSFaceIDUsageDescription</key><string>使用 Face ID 保護你的本機帳務資料。</string>
   <key>UISupportsDocumentBrowser</key><false/>
   <key>UIApplicationSceneManifest</key><dict><key>UIApplicationSupportsMultipleScenes</key><false/></dict>
   <key>UTImportedTypeDeclarations</key><array><dict>

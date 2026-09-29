@@ -33,4 +33,15 @@ final class MintLedgerTests: XCTestCase {
             XCTAssertFalse(category.symbol.isEmpty)
         }
     }
+
+    func testAmountExpressionUsesOperatorPrecedence() {
+        XCTAssertEqual(AmountExpression.evaluate("100+20×3"), 160)
+        XCTAssertEqual(AmountExpression.evaluate("100÷4−5"), 20)
+    }
+
+    func testAmountExpressionRejectsIncompleteOrInvalidMath() {
+        XCTAssertNil(AmountExpression.evaluate("100+"))
+        XCTAssertNil(AmountExpression.evaluate("100÷0"))
+        XCTAssertNil(AmountExpression.evaluate("-1"))
+    }
 }

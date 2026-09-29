@@ -10,7 +10,7 @@ enum TransactionKind: String, Codable, CaseIterable, Identifiable, Sendable {
 }
 
 enum LedgerCategory: String, Codable, CaseIterable, Identifiable, Sendable {
-    case food, transport, shopping, housing, entertainment, health, education, salary, investment, travel, other
+    case food, transport, shopping, housing, entertainment, health, education, salary, allowance, investment, travel, other
 
     var id: String { rawValue }
     var title: String {
@@ -23,6 +23,7 @@ enum LedgerCategory: String, Codable, CaseIterable, Identifiable, Sendable {
         case .health: "醫療"
         case .education: "學習"
         case .salary: "薪資"
+        case .allowance: "零用錢"
         case .investment: "投資"
         case .travel: "旅遊"
         case .other: "其他"
@@ -39,6 +40,7 @@ enum LedgerCategory: String, Codable, CaseIterable, Identifiable, Sendable {
         case .health: "cross.case.fill"
         case .education: "book.fill"
         case .salary: "banknote.fill"
+        case .allowance: "giftcard.fill"
         case .investment: "chart.line.uptrend.xyaxis"
         case .travel: "airplane"
         case .other: "ellipsis.circle.fill"
@@ -117,4 +119,3 @@ extension Int64 {
         return formatter.string(from: NSNumber(value: Double(self) / 100)) ?? "\(self / 100)"
     }
 }
-
