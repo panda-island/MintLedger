@@ -19,7 +19,7 @@ final class LedgerStore {
                 let store = Unmanaged<LedgerStore>.fromOpaque(observer).takeUnretainedValue()
                 Task { @MainActor in store.reload() }
             },
-            SharedLedgerStorage.darwinNotificationName,
+            SharedLedgerStorage.darwinNotificationName.rawValue,
             nil,
             .deliverImmediately
         )
