@@ -50,7 +50,9 @@ struct AddTransactionView: View {
                 Picker("帳戶", selection: Binding(get: { accountID ?? store.snapshot.accounts.first?.id }, set: { accountID = $0 })) {
                     ForEach(store.snapshot.accounts) { Label($0.name, systemImage: $0.symbol).tag(Optional($0.id)) }
                 }
-                DatePicker("日期", selection: $date)
+                DatePicker("日期", selection: $date, displayedComponents: [.date, .hourAndMinute])
+                    .environment(\.locale, Locale(identifier: "zh_TW"))
+                    .environment(\.calendar, Calendar(identifier: .gregorian))
                 TextField("備註（選填）", text: $note)
             }
         }

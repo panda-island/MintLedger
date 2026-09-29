@@ -6,6 +6,21 @@ private struct TransactionMonthGroup: Identifiable {
     var id: Date { month }
     var incomeMinor: Int64 { items.filter { $0.kind == .income }.reduce(0) { $0 + $1.amountMinor } }
     var expenseMinor: Int64 { items.filter { $0.kind == .expense }.reduce(0) { $0 + $1.amountMinor } }
+
+    var dayGroups: [TransactionDayGroup] {
+        let calendar = Calendar.current
+        return Dictionary(grouping: items) { calendar.startOfDay(for: $0.date) }
+            .map { TransactionDayGroup(day: $0.key, items: $0.value.sorted { $0.date > $1.date }) }
+            .sorted { $0.day > $1.day }
+    }
+}
+
+private struct TransactionDayGroup: Identifiable {
+    let day: Date
+    let items: [LedgerTransaction]
+    var id: Date { day }
+    var incomeMinor: Int64 { items.filter { $0.kind == .income }.reduce(0) { $0 + $1.amountMinor } }
+    var expenseMinor: Int64 { items.filter { $0.kind == .expense }.reduce(0) { $0 + $1.amountMinor } }
 }
 
 struct TransactionsView: View {
@@ -16,6 +31,7 @@ struct TransactionsView: View {
     @State private var selection: Set<UUID> = []
     @State private var editingTransaction: LedgerTransaction?
     @State private var confirmsDeletion = false
+    @State private var selectedMonth = Date.now
 
     private var filtered: [LedgerTransaction] {
         store.transactions.filter { item in
@@ -38,31 +54,48 @@ struct TransactionsView: View {
             if filtered.isEmpty {
                 EmptyStateView(symbol: "magnifyingglass", title: "找不到交易", message: searchText.isEmpty ? "新增一筆收入或支出" : "試試其他搜尋字詞")
             } else {
-                List {
+                TabView(selection: $selectedMonth) {
                     ForEach(monthGroups) { group in
-                        Section {
-                            ForEach(group.items) { transaction in
-                                transactionButton(transaction)
-                                    .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
-                                    .listRowSeparator(.hidden)
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                        if !isSelecting {
-                                            Button(role: .destructive) { store.deleteTransactions(ids: Set([transaction.id])) } label: {
-                                                Label("刪除", systemImage: "trash")
-                                            }
+                        List {
+                            Section {
+                                ForEach(group.dayGroups) { dayGroup in
+                                    Section {
+                                        ForEach(dayGroup.items) { transaction in
+                                            transactionButton(transaction)
+                                                .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+                                                .listRowSeparator(.hidden)
+                                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                                    if !isSelecting {
+                                                        Button(role: .destructive) { store.deleteTransactions(ids: Set([transaction.id])) } label: {
+                                                            Label("刪除", systemImage: "trash")
+                                                        }
+                                                    }
+                                                }
                                         }
+                                    } header: {
+                                        DaySummaryHeader(group: dayGroup, currencyCode: store.snapshot.currencyCode)
+                                            .textCase(nil)
                                     }
+                                }
+                            } header: {
+                                MonthSummaryHeader(group: group, currencyCode: store.snapshot.currencyCode)
+                                    .textCase(nil)
                             }
-                        } header: {
-                            MonthSummaryHeader(group: group, currencyCode: store.snapshot.currencyCode)
-                                .textCase(nil)
                         }
+                        .listStyle(.plain)
+                        .tag(group.id)
+                        .accessibilityHint("左右滑動可查看其他月份")
                     }
                 }
-                .listStyle(.plain)
+                .tabViewStyle(.page(indexDisplayMode: .automatic))
+                .onAppear { selectNewestAvailableMonthIfNeeded() }
+                .onChange(of: monthGroups.map(\.id)) { _, months in
+                    guard !months.contains(selectedMonth) else { return }
+                    selectedMonth = months.first ?? .now
+                }
             }
         }
-        .navigationTitle(isSelecting ? "已選 (selection.count) 筆" : "交易明細")
+        .navigationTitle(isSelecting ? "已選 \(selection.count) 筆" : "交易明細")
         .searchable(text: $searchText, prompt: "搜尋備註或分類")
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
@@ -84,7 +117,7 @@ struct TransactionsView: View {
         .sheet(item: $editingTransaction) { transaction in
             NavigationStack { TransactionEditorView(transaction: transaction) }
         }
-        .confirmationDialog("刪除選取的 (selection.count) 筆明細？", isPresented: $confirmsDeletion, titleVisibility: .visible) {
+        .confirmationDialog("刪除選取的 \(selection.count) 筆明細？", isPresented: $confirmsDeletion, titleVisibility: .visible) {
             Button("刪除", role: .destructive) {
                 store.deleteTransactions(ids: selection)
                 toggleSelectionMode()
@@ -150,6 +183,11 @@ struct TransactionsView: View {
         store.changeCategory(for: selection, to: category)
         toggleSelectionMode()
     }
+
+    private func selectNewestAvailableMonthIfNeeded() {
+        guard !monthGroups.contains(where: { $0.id == selectedMonth }) else { return }
+        selectedMonth = monthGroups.first?.id ?? .now
+    }
 }
 
 private struct MonthSummaryHeader: View {
@@ -170,5 +208,34 @@ private struct MonthSummaryHeader: View {
             .font(.caption)
         }
         .padding(.vertical, 4)
+    }
+}
+
+private struct DaySummaryHeader: View {
+    let group: TransactionDayGroup
+    let currencyCode: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(group.day.ledgerDayTitle)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                if group.day.ledgerShowsShortDateAlongsideDayTitle {
+                    Text(group.day.ledgerShortDateText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            HStack(spacing: 10) {
+                Text("收入 \(group.incomeMinor.currency(code: currencyCode))").foregroundStyle(.green)
+                Text("支出 \(group.expenseMinor.currency(code: currencyCode))").foregroundStyle(.red)
+                Text("淨額 \((group.incomeMinor - group.expenseMinor).currency(code: currencyCode))")
+                    .foregroundStyle(.secondary)
+            }
+            .font(.caption2)
+        }
+        .padding(.top, 9)
+        .padding(.bottom, 2)
     }
 }

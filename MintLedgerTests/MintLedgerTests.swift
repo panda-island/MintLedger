@@ -66,13 +66,21 @@ final class MintLedgerTests: XCTestCase {
     }
 
     func testLedgerDateFormattingUsesChineseMonthsAndTimePeriods() {
-        let date = Date(timeIntervalSince1970: 1_790_000_000)
-        XCTAssertTrue(date.ledgerMonthText.contains("月"))
-        XCTAssertTrue(date.ledgerDateTimeText.contains("年"))
-        XCTAssertTrue(date.ledgerDateTimeText.contains("月"))
-        XCTAssertTrue(date.ledgerDateTimeText.contains("日"))
-        XCTAssertTrue(date.ledgerDateTimeText.contains("點"))
-        XCTAssertFalse(date.ledgerDateTimeText.localizedCaseInsensitiveContains("AM"))
-        XCTAssertFalse(date.ledgerDateTimeText.localizedCaseInsensitiveContains("PM"))
+        let priorYear = Date(timeIntervalSince1970: 1_600_000_000)
+        XCTAssertTrue(priorYear.ledgerMonthText.contains("月"))
+        XCTAssertTrue(priorYear.ledgerDateTimeText.contains("年"))
+        XCTAssertTrue(priorYear.ledgerDateTimeText.contains("月"))
+        XCTAssertTrue(priorYear.ledgerDateTimeText.contains("日"))
+        XCTAssertTrue(priorYear.ledgerDateTimeText.contains("點"))
+        XCTAssertFalse(priorYear.ledgerDateTimeText.localizedCaseInsensitiveContains("AM"))
+        XCTAssertFalse(priorYear.ledgerDateTimeText.localizedCaseInsensitiveContains("PM"))
+    }
+
+    func testCurrentYearDateDoesNotRepeatItsYearAndUsesChineseDayTitles() {
+        let current = Date.now
+        XCTAssertFalse(current.ledgerDateTimeText.contains("年"))
+        XCTAssertEqual(current.ledgerDayTitle, "今天")
+        XCTAssertTrue(current.ledgerShowsShortDateAlongsideDayTitle)
+        XCTAssertTrue(current.ledgerShortDateText.contains("月"))
     }
 }
