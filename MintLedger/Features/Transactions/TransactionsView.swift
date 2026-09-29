@@ -1,8 +1,10 @@
+import Charts
 import SwiftUI
 
 private struct TransactionMonthGroup: Identifiable {
     let month: Date
     let items: [LedgerTransaction]
+
     var id: Date { month }
     var incomeMinor: Int64 { items.filter { $0.kind == .income }.reduce(0) { $0 + $1.amountMinor } }
     var expenseMinor: Int64 { items.filter { $0.kind == .expense }.reduce(0) { $0 + $1.amountMinor } }
@@ -18,6 +20,7 @@ private struct TransactionMonthGroup: Identifiable {
 private struct TransactionDayGroup: Identifiable {
     let day: Date
     let items: [LedgerTransaction]
+
     var id: Date { day }
     var incomeMinor: Int64 { items.filter { $0.kind == .income }.reduce(0) { $0 + $1.amountMinor } }
     var expenseMinor: Int64 { items.filter { $0.kind == .expense }.reduce(0) { $0 + $1.amountMinor } }
@@ -49,45 +52,57 @@ struct TransactionsView: View {
         .sorted { $0.month > $1.month }
     }
 
+    private var displayedMonthGroup: TransactionMonthGroup? {
+        monthGroups.first { $0.id == selectedMonth } ?? monthGroups.first
+    }
+
     var body: some View {
         Group {
             if filtered.isEmpty {
                 EmptyStateView(symbol: "magnifyingglass", title: "找不到交易", message: searchText.isEmpty ? "新增一筆收入或支出" : "試試其他搜尋字詞")
-            } else {
-                TabView(selection: $selectedMonth) {
-                    ForEach(monthGroups) { group in
-                        List {
+            } else if let group = displayedMonthGroup {
+                List {
+                    Section {
+                        ForEach(group.dayGroups) { dayGroup in
                             Section {
-                                ForEach(group.dayGroups) { dayGroup in
-                                    Section {
-                                        ForEach(dayGroup.items) { transaction in
-                                            transactionButton(transaction)
-                                                .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
-                                                .listRowSeparator(.hidden)
-                                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                                    if !isSelecting {
-                                                        Button(role: .destructive) { store.deleteTransactions(ids: Set([transaction.id])) } label: {
-                                                            Label("刪除", systemImage: "trash")
-                                                        }
-                                                    }
+                                ForEach(dayGroup.items) { transaction in
+                                    transactionButton(transaction)
+                                        .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+                                        .listRowSeparator(.hidden)
+                                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                            if !isSelecting {
+                                                Button(role: .destructive) { store.deleteTransactions(ids: Set([transaction.id])) } label: {
+                                                    Label("刪除", systemImage: "trash")
                                                 }
+                                            }
                                         }
-                                    } header: {
-                                        DaySummaryHeader(group: dayGroup, currencyCode: store.snapshot.currencyCode)
-                                            .textCase(nil)
-                                    }
                                 }
                             } header: {
-                                MonthSummaryHeader(group: group, currencyCode: store.snapshot.currencyCode)
+                                DaySummaryHeader(group: dayGroup, currencyCode: store.snapshot.currencyCode)
                                     .textCase(nil)
                             }
                         }
-                        .listStyle(.plain)
-                        .tag(group.id)
-                        .accessibilityHint("左右滑動可查看其他月份")
+                    } header: {
+                        MonthSummaryHeader(
+                            group: group,
+                            currencyCode: store.snapshot.currencyCode,
+                            canShowNewerMonth: canMoveMonth(by: -1),
+                            canShowOlderMonth: canMoveMonth(by: 1),
+                            showNewerMonth: { moveMonth(by: -1) },
+                            showOlderMonth: { moveMonth(by: 1) }
+                        )
+                        .textCase(nil)
+                        // 只讓月份標題處理水平滑動，交易列保留系統的左滑刪除手勢。
+                        .gesture(
+                            DragGesture(minimumDistance: 20)
+                                .onEnded { value in
+                                    guard abs(value.translation.width) > abs(value.translation.height), abs(value.translation.width) > 48 else { return }
+                                    moveMonth(by: value.translation.width < 0 ? 1 : -1)
+                                }
+                        )
                     }
                 }
-                .tabViewStyle(.page(indexDisplayMode: .automatic))
+                .listStyle(.plain)
                 .onAppear { selectNewestAvailableMonthIfNeeded() }
                 .onChange(of: monthGroups.map(\.id)) { _, months in
                     guard !months.contains(selectedMonth) else { return }
@@ -188,17 +203,44 @@ struct TransactionsView: View {
         guard !monthGroups.contains(where: { $0.id == selectedMonth }) else { return }
         selectedMonth = monthGroups.first?.id ?? .now
     }
+
+    private func canMoveMonth(by offset: Int) -> Bool {
+        guard let index = monthGroups.firstIndex(where: { $0.id == selectedMonth }) else { return false }
+        return monthGroups.indices.contains(index + offset)
+    }
+
+    private func moveMonth(by offset: Int) {
+        guard let index = monthGroups.firstIndex(where: { $0.id == selectedMonth }),
+              monthGroups.indices.contains(index + offset) else { return }
+        withAnimation(.snappy) {
+            selectedMonth = monthGroups[index + offset].id
+        }
+    }
 }
 
 private struct MonthSummaryHeader: View {
     let group: TransactionMonthGroup
     let currencyCode: String
+    let canShowNewerMonth: Bool
+    let canShowOlderMonth: Bool
+    let showNewerMonth: () -> Void
+    let showOlderMonth: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(group.month.ledgerMonthText)
-                .font(.headline)
-                .foregroundStyle(.primary)
+            HStack {
+                Button(action: showNewerMonth) { Image(systemName: "chevron.left") }
+                    .disabled(!canShowNewerMonth)
+                    .accessibilityLabel("查看較新的月份")
+                Spacer()
+                Text(group.month.ledgerMonthText)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                Button(action: showOlderMonth) { Image(systemName: "chevron.right") }
+                    .disabled(!canShowOlderMonth)
+                    .accessibilityLabel("查看較舊的月份")
+            }
             HStack(spacing: 12) {
                 Text("收入 \(group.incomeMinor.currency(code: currencyCode))").foregroundStyle(.green)
                 Text("支出 \(group.expenseMinor.currency(code: currencyCode))").foregroundStyle(.red)
@@ -206,8 +248,40 @@ private struct MonthSummaryHeader: View {
                 Text("淨額 \((group.incomeMinor - group.expenseMinor).currency(code: currencyCode))")
             }
             .font(.caption)
+            MonthSummaryChart(group: group)
+                .frame(height: 115)
+                .accessibilityLabel("\(group.month.ledgerMonthText) 收入、支出與淨額圖表")
+            Text("在此月份標題左右滑動，可切換月份")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
+    }
+}
+
+private struct MonthSummaryChart: View {
+    let group: TransactionMonthGroup
+
+    private var values: [(title: String, amount: Int64)] {
+        [("收入", group.incomeMinor), ("支出", group.expenseMinor), ("淨額", group.incomeMinor - group.expenseMinor)]
+    }
+
+    var body: some View {
+        Chart(values, id: \.title) { value in
+            BarMark(x: .value("項目", value.title), y: .value("金額", value.amount))
+                .foregroundStyle(color(for: value.title))
+                .cornerRadius(4)
+        }
+        .chartLegend(.hidden)
+        .chartYAxis { AxisMarks(position: .leading) }
+    }
+
+    private func color(for title: String) -> Color {
+        switch title {
+        case "收入": .green
+        case "支出": .red
+        default: .mint
+        }
     }
 }
 
