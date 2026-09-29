@@ -12,12 +12,17 @@ struct MintLedgerApp: App {
                 .task {
                     store.reload()
                     store.runDueRecurringEntries()
+                    SharedLedgerStorage.refreshWidget()
                 }
-                .onOpenURL { _ in store.reload() }
+                .onOpenURL { _ in
+                    store.reload()
+                    SharedLedgerStorage.refreshWidget()
+                }
                 .onChange(of: scenePhase) { _, phase in
                     guard phase == .active else { return }
                     store.reload()
                     store.runDueRecurringEntries()
+                    SharedLedgerStorage.refreshWidget()
                 }
         }
     }

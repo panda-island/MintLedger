@@ -31,6 +31,10 @@ enum SharedLedgerStorage {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID) != nil
     }
 
+    static func refreshWidget() {
+        WidgetCenter.shared.reloadTimelines(ofKind: widgetKind)
+    }
+
     static func load() throws -> LedgerSnapshot {
         let url = try dataURL()
         guard FileManager.default.fileExists(atPath: url.path) else { return .empty }
@@ -58,7 +62,7 @@ enum SharedLedgerStorage {
             nil,
             true
         )
-        WidgetCenter.shared.reloadTimelines(ofKind: widgetKind)
+        refreshWidget()
     }
 
     static func append(
