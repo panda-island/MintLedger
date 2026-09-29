@@ -16,7 +16,7 @@ struct AppLockGate<Content: View>: View {
                 content
             } else {
                 VStack(spacing: 18) {
-                    Image(systemName: "lock.shield.fill").font(.system(size: 52)).foregroundStyle(.mintLedger)
+                    Image(systemName: "lock.shield.fill").font(.system(size: 52)).foregroundStyle(Color.mintLedger)
                     Text("MintLedger 已鎖定").font(.title2.bold())
                     Text(errorMessage ?? "使用 Face ID 或裝置密碼解鎖").foregroundStyle(.secondary)
                     Button("解鎖", action: authenticate).buttonStyle(.borderedProminent)
@@ -42,4 +42,3 @@ struct AppLockGate<Content: View>: View {
         }
     }
 }
-

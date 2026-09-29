@@ -57,9 +57,9 @@ struct DashboardView: View {
                 } else {
                     Chart(dailyExpenses, id: \.date) { item in
                         AreaMark(x: .value("日期", item.date), y: .value("支出", item.amount))
-                            .foregroundStyle(LinearGradient(colors: [.mintLedger.opacity(0.7), .mintLedger.opacity(0.05)], startPoint: .top, endPoint: .bottom))
+                            .foregroundStyle(LinearGradient(colors: [Color.mintLedger.opacity(0.7), Color.mintLedger.opacity(0.05)], startPoint: .top, endPoint: .bottom))
                         LineMark(x: .value("日期", item.date), y: .value("支出", item.amount))
-                            .foregroundStyle(.mintLedger).interpolationMethod(.catmullRom)
+                            .foregroundStyle(Color.mintLedger).interpolationMethod(.catmullRom)
                     }
                     .frame(height: 150)
                     .chartXAxis(.hidden)
@@ -113,11 +113,10 @@ private struct MetricCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Image(systemName: kind.symbol).foregroundStyle(kind == .income ? .green : .red)
+            Image(systemName: kind.symbol).foregroundStyle(kind == .income ? Color.green : Color.red)
             Text(title).font(.caption).foregroundStyle(.secondary)
             AmountText(amountMinor: amount, currencyCode: currency, kind: kind).font(.headline)
         }
         .padding(14).frame(maxWidth: .infinity, alignment: .leading)
     }
 }
-

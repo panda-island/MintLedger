@@ -35,7 +35,7 @@ struct GlassAddButton: View {
                     .frame(width: 56, height: 56)
             }
             .buttonStyle(.glassProminent)
-            .tint(.mintLedger)
+            .tint(Color.mintLedger)
         } else {
             Button(action: action) {
                 Image(systemName: "plus")
@@ -58,7 +58,7 @@ struct AmountText: View {
     var body: some View {
         Text(amountMinor.currency(code: currencyCode))
             .monospacedDigit()
-            .foregroundStyle(kind == .expense ? .red : (kind == .income ? .green : .primary))
+            .foregroundStyle(kind == .expense ? Color.red : (kind == .income ? Color.green : Color.primary))
             .contentTransition(.numericText())
     }
 }
@@ -72,4 +72,3 @@ struct EmptyStateView: View {
         ContentUnavailableView(title, systemImage: symbol, description: Text(message))
     }
 }
-

@@ -45,7 +45,7 @@ private struct BudgetRow: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     ProgressView(value: progress)
-                        .tint(progress > 0.9 ? .red : .mintLedger)
+                        .tint(progress > 0.9 ? Color.red : Color.mintLedger)
                 }
             }
         }.buttonStyle(.plain)

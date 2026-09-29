@@ -8,7 +8,7 @@ struct TransactionRow: View {
         HStack(spacing: 13) {
             Image(systemName: transaction.category.symbol)
                 .font(.headline)
-                .foregroundStyle(.mintLedger)
+                .foregroundStyle(Color.mintLedger)
                 .frame(width: 42, height: 42)
                 .background(Color.mintLedger.opacity(0.12), in: Circle())
             VStack(alignment: .leading, spacing: 3) {
@@ -25,4 +25,3 @@ struct TransactionRow: View {
         .accessibilityElement(children: .combine)
     }
 }
-
