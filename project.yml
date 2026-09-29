@@ -10,8 +10,8 @@ settings:
     SWIFT_VERSION: "5.0"
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
-    CURRENT_PROJECT_VERSION: 7
-    MARKETING_VERSION: 1.2.0
+    CURRENT_PROJECT_VERSION: 8
+    MARKETING_VERSION: 1.2.1
     ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
 packages: {}
 targets:
@@ -31,6 +31,9 @@ targets:
         CODE_SIGN_ENTITLEMENTS: MintLedger/MintLedger.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1,2"
+    dependencies:
+      - target: MintLedgerWidget
+        embed: true
   MintLedgerWidget:
     type: app-extension
     platform: iOS
@@ -61,6 +64,7 @@ schemes:
     build:
       targets:
         MintLedger: all
+        MintLedgerWidget: all
         MintLedgerTests: [test]
     test:
       gatherCoverageData: true

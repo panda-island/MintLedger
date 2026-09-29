@@ -57,6 +57,10 @@ final class MintLedgerTests: XCTestCase {
         XCTAssertEqual(try SharedLedgerStorage.dataURL().lastPathComponent, "ledger-v1.json")
     }
 
+    func testWidgetUsesTheSameAppGroupAsTheMainApp() {
+        XCTAssertEqual(SharedLedgerStorage.appGroupID, "group.063105cc445c1ae9.1")
+    }
+
     func testAppendingAnOperatorReplacesThePreviousOperator() {
         XCTAssertEqual(AmountExpression.appending("×", to: "100+"), "100×")
     }
