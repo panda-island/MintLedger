@@ -12,11 +12,13 @@ final class MintLedgerTests: XCTestCase {
 
     func testBackupRoundTrip() throws {
         let account = LedgerAccount(name: "測試", symbol: "wallet.pass")
+        let fixedDate = Date(timeIntervalSince1970: 1_700_000_000)
         let original = LedgerSnapshot(
-            transactions: [LedgerTransaction(kind: .expense, amountMinor: 9_900, category: .shopping, accountID: account.id, note: "測試交易", date: Date(timeIntervalSince1970: 1_700_000_000))],
+            transactions: [LedgerTransaction(kind: .expense, amountMinor: 9_900, category: .shopping, accountID: account.id, note: "測試交易", date: fixedDate, createdAt: fixedDate)],
             accounts: [account],
             budgets: [Budget(category: .shopping, limitMinor: 100_000)],
-            currencyCode: "TWD"
+            currencyCode: "TWD",
+            updatedAt: fixedDate
         )
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -32,4 +34,3 @@ final class MintLedgerTests: XCTestCase {
         }
     }
 }
-
