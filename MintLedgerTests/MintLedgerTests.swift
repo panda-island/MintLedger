@@ -50,4 +50,9 @@ final class MintLedgerTests: XCTestCase {
         XCTAssertTrue(UTType.mintLedgerBackup.conforms(to: .json))
         XCTAssertEqual(UTType.mintLedgerBackup.preferredFilenameExtension, "mintledger")
     }
+
+    func testWidgetUsesTheSameSharedLedgerLocation() throws {
+        XCTAssertEqual(SharedLedgerStorage.widgetKind, "MintLedgerSummaryWidget")
+        XCTAssertEqual(try SharedLedgerStorage.dataURL().lastPathComponent, "ledger-v1.json")
+    }
 }

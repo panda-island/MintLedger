@@ -1,8 +1,10 @@
 import Foundation
+import WidgetKit
 
 enum SharedLedgerStorage {
     static let appGroupID = "group.com.a0973.MintLedger"
     static let filename = "ledger-v1.json"
+    static let widgetKind = "MintLedgerSummaryWidget"
     static var darwinNotificationName: CFNotificationName {
         CFNotificationName(rawValue: "com.a0973.MintLedger.dataChanged" as CFString)
     }
@@ -23,6 +25,10 @@ enum SharedLedgerStorage {
         let folder = base.appendingPathComponent("MintLedger", isDirectory: true)
         try fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
         return folder.appendingPathComponent(filename)
+    }
+
+    static var isUsingAppGroup: Bool {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID) != nil
     }
 
     static func load() throws -> LedgerSnapshot {
@@ -52,6 +58,7 @@ enum SharedLedgerStorage {
             nil,
             true
         )
+        WidgetCenter.shared.reloadTimelines(ofKind: widgetKind)
     }
 
     static func append(

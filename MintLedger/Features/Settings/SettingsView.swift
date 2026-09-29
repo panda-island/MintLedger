@@ -33,6 +33,13 @@ struct SettingsView: View {
             Section("系統整合") {
                 Label("捷徑／Siri：說「用 MintLedger 記一筆」", systemImage: "wand.and.stars")
                 Label("桌面與鎖定畫面小工具", systemImage: "square.grid.2x2")
+                if SharedLedgerStorage.isUsingAppGroup {
+                    Label("小工具與 App 正在共用同一份資料", systemImage: "checkmark.icloud.fill")
+                        .foregroundStyle(.green)
+                } else {
+                    Label("目前簽章未授權共享資料；小工具無法與 App 同步", systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                }
             }
             Section("關於") {
                 LabeledContent("版本", value: appVersion)

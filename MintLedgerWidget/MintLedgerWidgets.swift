@@ -13,7 +13,7 @@ struct LedgerProvider: TimelineProvider {
     }
     func getTimeline(in context: Context, completion: @escaping (Timeline<LedgerEntry>) -> Void) {
         let entry = LedgerEntry(date: .now, snapshot: (try? SharedLedgerStorage.load()) ?? .empty)
-        completion(Timeline(entries: [entry], policy: .after(.now.addingTimeInterval(900))))
+        completion(Timeline(entries: [entry], policy: .after(.now.addingTimeInterval(300))))
     }
 }
 
@@ -97,7 +97,7 @@ struct MintLedgerSummaryWidget: Widget {
                 .foregroundStyle(.white)
         }
         .configurationDisplayName("MintLedger 資產")
-        .description("在鎖定畫面查看總資產，或在桌面查看總資產與近期明細。")
+        .description("與 App 共用帳本資料；在鎖定畫面查看總資產，或在桌面查看近期明細。")
         .supportedFamilies([.systemMedium, .accessoryRectangular])
     }
 }
