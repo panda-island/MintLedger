@@ -1,4 +1,5 @@
 import XCTest
+import UniformTypeIdentifiers
 @testable import MintLedger
 
 final class MintLedgerTests: XCTestCase {
@@ -43,5 +44,10 @@ final class MintLedgerTests: XCTestCase {
         XCTAssertNil(AmountExpression.evaluate("100+"))
         XCTAssertNil(AmountExpression.evaluate("100÷0"))
         XCTAssertNil(AmountExpression.evaluate("-1"))
+    }
+
+    func testBackupFileTypeIsJSONWithExpectedExtension() {
+        XCTAssertTrue(UTType.mintLedgerBackup.conforms(to: .json))
+        XCTAssertEqual(UTType.mintLedgerBackup.preferredFilenameExtension, "mintledger")
     }
 }

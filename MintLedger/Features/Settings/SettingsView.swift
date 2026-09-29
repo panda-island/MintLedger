@@ -35,14 +35,14 @@ struct SettingsView: View {
                 Label("桌面與鎖定畫面小工具", systemImage: "square.grid.2x2")
             }
             Section("關於") {
-                LabeledContent("版本", value: "1.1.0")
+                LabeledContent("版本", value: appVersion)
                 LabeledContent("資料格式", value: "MintLedger v1 JSON")
             }
         }
         .navigationTitle("設定")
         .fileExporter(isPresented: $exportingBackup, document: exportDocument, contentType: .mintLedgerBackup, defaultFilename: "MintLedger-Backup") { result in report(result, success: "備份已匯出") }
         .fileExporter(isPresented: $exportingCSV, document: csvDocument, contentType: .commaSeparatedText, defaultFilename: "MintLedger-Transactions") { result in report(result, success: "CSV 已匯出") }
-        .fileImporter(isPresented: $importing, allowedContentTypes: [.mintLedgerBackup, .json]) { result in importBackup(result) }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.mintLedgerBackup, .json, .data]) { result in importBackup(result) }
         .alert("MintLedger", isPresented: Binding(get: { statusMessage != nil }, set: { if !$0 { statusMessage = nil } })) {
             Button("好") { statusMessage = nil }
         } message: { Text(statusMessage ?? "") }
@@ -56,11 +56,15 @@ struct SettingsView: View {
     private func importBackup(_ result: Result<URL, Error>) {
         do {
             let url = try result.get()
-            let accessing = url.startAccessingSecurityScopedResource()
-            defer { if accessing { url.stopAccessingSecurityScopedResource() } }
-            try store.importBackup(Data(contentsOf: url))
-            statusMessage = "還原完成"
+            try store.importBackup(BackupFileReader.read(from: url))
+            statusMessage = "還原完成，共匯入 \(store.snapshot.transactions.count) 筆明細"
         } catch { statusMessage = "還原失敗：\(error.localizedDescription)" }
+    }
+
+    private var appVersion: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+        return "\(version) (\(build))"
     }
 
     private func report(_ result: Result<URL, Error>, success: String) {
