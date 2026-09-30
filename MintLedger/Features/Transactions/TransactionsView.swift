@@ -8,6 +8,18 @@ private enum TransactionSortOrder: String, CaseIterable, Identifiable {
     case lowestAmount = "金額：最低優先"
 
     var id: String { rawValue }
+
+    var usesDaySections: Bool {
+        self == .newestDay || self == .oldestDay
+    }
+
+    var monthSectionTitle: String {
+        switch self {
+        case .highestAmount: "全月帳目・金額最高優先"
+        case .lowestAmount: "全月帳目・金額最低優先"
+        default: ""
+        }
+    }
 }
 
 private struct TransactionMonthGroup: Identifiable {
@@ -23,21 +35,21 @@ private struct TransactionMonthGroup: Identifiable {
         return Dictionary(grouping: items) { calendar.startOfDay(for: $0.date) }
             .map { day, items in
                 TransactionDayGroup(day: day, items: items.sorted { left, right in
-                    switch order {
-                    case .newestDay:
-                        left.date > right.date
-                    case .oldestDay:
-                        left.date < right.date
-                    case .highestAmount:
-                        left.amountMinor == right.amountMinor ? left.date > right.date : left.amountMinor > right.amountMinor
-                    case .lowestAmount:
-                        left.amountMinor == right.amountMinor ? left.date > right.date : left.amountMinor < right.amountMinor
-                    }
+                    order == .oldestDay ? left.date < right.date : left.date > right.date
                 })
             }
             .sorted { left, right in
                 order == .oldestDay ? left.day < right.day : left.day > right.day
             }
+    }
+
+    func itemsSortedByAmount(using order: TransactionSortOrder) -> [LedgerTransaction] {
+        items.sorted { left, right in
+            if left.amountMinor == right.amountMinor { return left.date > right.date }
+            return order == .lowestAmount
+                ? left.amountMinor < right.amountMinor
+                : left.amountMinor > right.amountMinor
+        }
     }
 }
 
@@ -107,23 +119,28 @@ struct TransactionsView: View {
                             }
                     )
 
-                    ForEach(group.dayGroups(sortedBy: sortOrder)) { dayGroup in
+                    if sortOrder.usesDaySections {
+                        ForEach(group.dayGroups(sortedBy: sortOrder)) { dayGroup in
+                            Section {
+                                ForEach(dayGroup.items) { transaction in
+                                    transactionListRow(transaction)
+                                }
+                            } header: {
+                                DaySummaryHeader(group: dayGroup, currencyCode: store.snapshot.currencyCode)
+                                    .textCase(nil)
+                            }
+                        }
+                    } else {
                         Section {
-                            ForEach(dayGroup.items) { transaction in
-                                transactionButton(transaction)
-                                    .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
-                                    .listRowSeparator(.hidden)
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                        if !isSelecting {
-                                            Button(role: .destructive) { store.deleteTransactions(ids: Set([transaction.id])) } label: {
-                                                Label("刪除", systemImage: "trash")
-                                            }
-                                        }
-                                    }
+                            ForEach(group.itemsSortedByAmount(using: sortOrder)) { transaction in
+                                transactionListRow(transaction)
                             }
                         } header: {
-                            DaySummaryHeader(group: dayGroup, currencyCode: store.snapshot.currencyCode)
+                            Text(sortOrder.monthSectionTitle)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
                                 .textCase(nil)
+                                .padding(.top, 8)
                         }
                     }
                 }
@@ -195,6 +212,21 @@ struct TransactionsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func transactionListRow(_ transaction: LedgerTransaction) -> some View {
+        transactionButton(transaction)
+            .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+            .listRowSeparator(.hidden)
+            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                if !isSelecting {
+                    Button(role: .destructive) {
+                        store.deleteTransactions(ids: Set([transaction.id]))
+                    } label: {
+                        Label("刪除", systemImage: "trash")
+                    }
+                }
+            }
     }
 
     private var selectionBar: some View {
