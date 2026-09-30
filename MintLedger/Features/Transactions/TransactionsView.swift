@@ -1,6 +1,15 @@
 import Charts
 import SwiftUI
 
+private enum TransactionSortOrder: String, CaseIterable, Identifiable {
+    case newestDay = "日期（天）：最新優先"
+    case oldestDay = "日期（天）：最舊優先"
+    case highestAmount = "金額：最高優先"
+    case lowestAmount = "金額：最低優先"
+
+    var id: String { rawValue }
+}
+
 private struct TransactionMonthGroup: Identifiable {
     let month: Date
     let items: [LedgerTransaction]
@@ -9,11 +18,26 @@ private struct TransactionMonthGroup: Identifiable {
     var incomeMinor: Int64 { items.filter { $0.kind == .income }.reduce(0) { $0 + $1.amountMinor } }
     var expenseMinor: Int64 { items.filter { $0.kind == .expense }.reduce(0) { $0 + $1.amountMinor } }
 
-    var dayGroups: [TransactionDayGroup] {
+    func dayGroups(sortedBy order: TransactionSortOrder) -> [TransactionDayGroup] {
         let calendar = Calendar.current
         return Dictionary(grouping: items) { calendar.startOfDay(for: $0.date) }
-            .map { TransactionDayGroup(day: $0.key, items: $0.value.sorted { $0.date > $1.date }) }
-            .sorted { $0.day > $1.day }
+            .map { day, items in
+                TransactionDayGroup(day: day, items: items.sorted { left, right in
+                    switch order {
+                    case .newestDay:
+                        left.date > right.date
+                    case .oldestDay:
+                        left.date < right.date
+                    case .highestAmount:
+                        left.amountMinor == right.amountMinor ? left.date > right.date : left.amountMinor > right.amountMinor
+                    case .lowestAmount:
+                        left.amountMinor == right.amountMinor ? left.date > right.date : left.amountMinor < right.amountMinor
+                    }
+                })
+            }
+            .sorted { left, right in
+                order == .oldestDay ? left.day < right.day : left.day > right.day
+            }
     }
 }
 
@@ -35,6 +59,7 @@ struct TransactionsView: View {
     @State private var editingTransaction: LedgerTransaction?
     @State private var confirmsDeletion = false
     @State private var selectedMonth = Date.now
+    @State private var sortOrder: TransactionSortOrder = .newestDay
 
     private var filtered: [LedgerTransaction] {
         store.transactions.filter { item in
@@ -82,7 +107,7 @@ struct TransactionsView: View {
                             }
                     )
 
-                    ForEach(group.dayGroups) { dayGroup in
+                    ForEach(group.dayGroups(sortedBy: sortOrder)) { dayGroup in
                         Section {
                             ForEach(dayGroup.items) { transaction in
                                 transactionButton(transaction)
@@ -117,7 +142,16 @@ struct TransactionsView: View {
                 Button(isSelecting ? "完成" : "選取") { toggleSelectionMode() }
                     .disabled(filtered.isEmpty)
             }
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                Menu {
+                    Picker("排序方式", selection: $sortOrder) {
+                        ForEach(TransactionSortOrder.allCases) { order in
+                            Text(order.rawValue).tag(order)
+                        }
+                    }
+                } label: {
+                    Label("排序", systemImage: "arrow.up.arrow.down")
+                }
                 Menu {
                     Button("全部") { filter = nil }
                     ForEach(TransactionKind.allCases) { kind in Button(kind.title) { filter = kind } }
