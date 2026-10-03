@@ -56,7 +56,7 @@ final class GoogleDriveBackupService {
         defer { isWorking = false }
 
         do {
-            let user = try await withCheckedThrowingContinuation { continuation in
+            let user: GIDGoogleUser = try await withCheckedThrowingContinuation { continuation in
                 GIDSignIn.sharedInstance.signIn(
                     withPresenting: presenter,
                     hint: nil,
@@ -251,7 +251,7 @@ final class GoogleDriveBackupService {
         guard let user = GIDSignIn.sharedInstance.currentUser else {
             throw GoogleDriveBackupError.notSignedIn
         }
-        let refreshedUser = try await withCheckedThrowingContinuation { continuation in
+        let refreshedUser: GIDGoogleUser = try await withCheckedThrowingContinuation { continuation in
             user.refreshTokensIfNeeded { user, error in
                 if let error {
                     continuation.resume(throwing: error)
