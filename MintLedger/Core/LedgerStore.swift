@@ -17,7 +17,10 @@ final class LedgerStore {
             { _, observer, _, _, _ in
                 guard let observer else { return }
                 let store = Unmanaged<LedgerStore>.fromOpaque(observer).takeUnretainedValue()
-                Task { @MainActor in store.reload() }
+                Task { @MainActor in
+                    store.reload()
+                    NotificationCenter.default.post(name: .ledgerStoreDidPersist, object: nil)
+                }
             },
             SharedLedgerStorage.darwinNotificationName.rawValue,
             nil,
@@ -165,6 +168,7 @@ final class LedgerStore {
             lastError = nil
             savePulse += 1
             WidgetCenter.shared.reloadAllTimelines()
+            NotificationCenter.default.post(name: .ledgerStoreDidPersist, object: nil)
         } catch {
             lastError = "儲存失敗：\(error.localizedDescription)"
         }
@@ -174,4 +178,8 @@ final class LedgerStore {
         let component: Calendar.Component = cadence == .weekly ? .weekOfYear : (cadence == .monthly ? .month : .year)
         return Calendar.current.date(byAdding: component, value: 1, to: date) ?? date.addingTimeInterval(86_400)
     }
+}
+
+extension Notification.Name {
+    static let ledgerStoreDidPersist = Notification.Name("MintLedger.LedgerStoreDidPersist")
 }

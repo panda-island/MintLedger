@@ -10,6 +10,7 @@ MintLedger 是一款離線優先、以繁體中文設計的 iPhone 記帳 App。
 - 明細依月份分組統計，可搜尋、篩選、批次刪除及批次更改分類
 - 點選單筆明細可查看詳細資料並編輯，金額鍵盤支援加減乘除
 - 自動輪替最近 10 份本機備份
+- 可選的 Google Drive 私人雲端備份：每天一個版本，自動更新並保留最近 30 天
 - `.mintledger` JSON 完整匯出／還原及 CSV 匯出
 - App Intent、Siri 與捷徑直接記帳；`alwaysAllowed` 支援裝置鎖定時執行，App 會即時同步新資料
 - 4×2 桌面小工具顯示總資產與近期明細，2×1 鎖定畫面小工具顯示總資產
@@ -38,7 +39,7 @@ open MintLedger.xcodeproj
 
 ## 隱私
 
-MintLedger 沒有分析 SDK、廣告 SDK 或網路請求。主 App、捷徑與 Widget 只透過 `group.com.a0973.MintLedger` App Group 分享本機 JSON。帳本資料使用 `completeUntilFirstUserAuthentication` 檔案保護，使使用者開機後首次解鎖後，鎖定畫面的捷徑仍能新增交易。
+MintLedger 沒有分析或廣告 SDK。未登入 Google 時，主 App、捷徑與 Widget 只透過 `group.com.a0973.MintLedger` App Group 分享本機 JSON；使用者主動登入後，App 才會把完整備份上傳到該 Google 帳號的隱藏 App Data 空間。帳本資料使用 `completeUntilFirstUserAuthentication` 檔案保護，使使用者開機後首次解鎖後，鎖定畫面的捷徑仍能新增交易。
 
 ## 授權
 

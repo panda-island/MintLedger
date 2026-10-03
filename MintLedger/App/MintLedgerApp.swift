@@ -1,15 +1,18 @@
 import SwiftUI
+import GoogleSignIn
 
 @main
 struct MintLedgerApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var store = LedgerStore()
+    @State private var googleDriveBackup = GoogleDriveBackupService()
     @State private var showsLaunchAnimation = true
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(store)
+                .environment(googleDriveBackup)
                 .overlay {
                     if showsLaunchAnimation {
                         LaunchAnimationView()
@@ -21,22 +24,35 @@ struct MintLedgerApp: App {
                     store.reload()
                     store.runDueRecurringEntries()
                     SharedLedgerStorage.refreshWidget()
+                    await googleDriveBackup.restorePreviousSignIn()
+                    scheduleCloudBackup()
                     try? await Task.sleep(nanoseconds: 700_000_000)
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.88)) {
                         showsLaunchAnimation = false
                     }
                 }
-                .onOpenURL { _ in
+                .onOpenURL { url in
+                    if GIDSignIn.sharedInstance.handle(url) { return }
                     store.reload()
                     SharedLedgerStorage.refreshWidget()
+                    scheduleCloudBackup()
                 }
                 .onChange(of: scenePhase) { _, phase in
                     guard phase == .active else { return }
                     store.reload()
                     store.runDueRecurringEntries()
                     SharedLedgerStorage.refreshWidget()
+                    scheduleCloudBackup()
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .ledgerStoreDidPersist)) { _ in
+                    scheduleCloudBackup()
                 }
         }
+    }
+
+    private func scheduleCloudBackup() {
+        guard let data = try? store.encodedBackup() else { return }
+        googleDriveBackup.scheduleAutomaticBackup(data: data)
     }
 }
 
