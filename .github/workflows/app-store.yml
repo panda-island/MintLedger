@@ -76,8 +76,44 @@ jobs:
           printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY_BASE64" | base64 --decode > "$KEY_DIRECTORY/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
           chmod 600 "$KEY_DIRECTORY/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
 
-      - name: Generate Xcode project
-        run: xcodegen generate
+      - name: Generate Xcode project for App Store signing
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("project.yml")
+          text = path.read_text()
+          app_profile = json.dumps(os.environ["APP_PROFILE_NAME"])
+          widget_profile = json.dumps(os.environ["WIDGET_PROFILE_NAME"])
+
+          app_marker = "        PRODUCT_BUNDLE_IDENTIFIER: com.pandaisland.mintledger\n"
+          widget_marker = "        PRODUCT_BUNDLE_IDENTIFIER: com.pandaisland.mintledger.widget\n"
+
+          if app_marker not in text or widget_marker not in text:
+              raise SystemExit("Could not find MintLedger bundle identifiers in project.yml")
+
+          text = text.replace(
+              app_marker,
+              app_marker
+              + "        CODE_SIGN_STYLE: Manual\n"
+              + "        CODE_SIGN_IDENTITY: Apple Distribution\n"
+              + f"        PROVISIONING_PROFILE_SPECIFIER: {app_profile}\n",
+              1,
+          )
+          text = text.replace(
+              widget_marker,
+              widget_marker
+              + "        CODE_SIGN_STYLE: Manual\n"
+              + "        CODE_SIGN_IDENTITY: Apple Distribution\n"
+              + f"        PROVISIONING_PROFILE_SPECIFIER: {widget_profile}\n",
+              1,
+          )
+          path.write_text(text)
+          PY
+          xcodegen generate
 
       - name: Archive signed app
         env:
@@ -90,8 +126,7 @@ jobs:
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/MintLedger.xcarchive" \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            CODE_SIGN_STYLE=Automatic
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID"
 
       - name: Export App Store IPA
         env:
