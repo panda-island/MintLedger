@@ -37,4 +37,9 @@
 
 ## CloudKit 首次發佈
 
-先用開發／TestFlight 版本成功建立一份備份，CloudKit 會在 Development 環境建立 `LedgerBackup` 與 `LedgerBackupIndex` 結構。確認欄位後，在 CloudKit Console 將 schema 部署到 Production，正式 App 才能寫入備份。
+TestFlight 與 App Store 使用的是 CloudKit Production 環境，不能拿來自動建立 Development schema。沒有 Mac 時，可直接在 CloudKit Console 的 Development 環境建立以下結構：
+
+- `LedgerBackup`：`payload`（Asset）、`modifiedAt`（Date/Time）、`size`（Int64）
+- `LedgerBackupIndex`：`entries`（Bytes）、`modifiedAt`（Date/Time）
+
+這個設計使用固定 Record ID，不需要新增查詢索引。確認結構後，在 CloudKit Console 將 schema 部署到 Production，再上傳 TestFlight build；否則正式簽署的 App 仍無法建立第一份備份。
