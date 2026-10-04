@@ -17,7 +17,7 @@ enum IntentCategory: String, AppEnum {
 
 struct QuickExpenseIntent: AppIntent {
     static let title: LocalizedStringResource = "快速記支出"
-    static let description = IntentDescription("不用開啟 App，從捷徑、Siri 或小工具直接記錄支出。")
+    static let description = IntentDescription("不用開啟 App，從捷徑或小工具直接記錄支出。")
     static let openAppWhenRun = false
     static let authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
 
