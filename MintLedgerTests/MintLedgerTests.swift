@@ -61,6 +61,11 @@ final class MintLedgerTests: XCTestCase {
         XCTAssertEqual(SharedLedgerStorage.appGroupID, "group.063105cc445c1ae9.1")
     }
 
+    func testCloudBackupUsesAppSpecificIdentifiers() {
+        XCTAssertEqual(ICloudBackupService.containerIdentifier, "iCloud.app.mulberry1261.emerald6299")
+        XCTAssertEqual(CloudBackupPurchaseService.productID, "app.mulberry1261.emerald6299.cloudbackup.lifetime")
+    }
+
     func testAppendingAnOperatorReplacesThePreviousOperator() {
         XCTAssertEqual(AmountExpression.appending("×", to: "100+"), "100×")
     }

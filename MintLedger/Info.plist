@@ -10,10 +10,6 @@
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
   <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
-  <key>GIDClientID</key><string>303304475122-5epn04u3v0ghe0schfg3g74l11ig0que.apps.googleusercontent.com</string>
-  <key>CFBundleURLTypes</key><array><dict>
-    <key>CFBundleURLSchemes</key><array><string>com.googleusercontent.apps.303304475122-5epn04u3v0ghe0schfg3g74l11ig0que</string></array>
-  </dict></array>
   <key>UILaunchScreen</key><dict><key>UIColorName</key><string>AccentColor</string></dict>
   <key>UISupportsDocumentBrowser</key><false/>
   <key>LSSupportsOpeningDocumentsInPlace</key><true/>

@@ -10,13 +10,9 @@ settings:
     SWIFT_VERSION: "5.0"
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
-    CURRENT_PROJECT_VERSION: 14
-    MARKETING_VERSION: 1.3.0
+    CURRENT_PROJECT_VERSION: 15
+    MARKETING_VERSION: 1.4.0
     ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
-packages:
-  GoogleSignIn:
-    url: https://github.com/google/GoogleSignIn-iOS
-    from: 9.0.0
 targets:
   MintLedger:
     type: application
@@ -37,8 +33,6 @@ targets:
     dependencies:
       - target: MintLedgerWidget
         embed: true
-      - package: GoogleSignIn
-        product: GoogleSignIn
   MintLedgerWidget:
     type: app-extension
     platform: iOS

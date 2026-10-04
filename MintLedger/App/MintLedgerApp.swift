@@ -1,18 +1,19 @@
 import SwiftUI
-import GoogleSignIn
 
 @main
 struct MintLedgerApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var store = LedgerStore()
-    @State private var googleDriveBackup = GoogleDriveBackupService()
+    @State private var cloudBackup = ICloudBackupService()
+    @State private var cloudBackupPurchase = CloudBackupPurchaseService()
     @State private var showsLaunchAnimation = true
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(store)
-                .environment(googleDriveBackup)
+                .environment(cloudBackup)
+                .environment(cloudBackupPurchase)
                 .overlay {
                     if showsLaunchAnimation {
                         LaunchAnimationView()
@@ -24,7 +25,10 @@ struct MintLedgerApp: App {
                     store.reload()
                     store.runDueRecurringEntries()
                     SharedLedgerStorage.refreshWidget()
-                    await googleDriveBackup.restorePreviousSignIn()
+                    await cloudBackupPurchase.prepare()
+                    if cloudBackupPurchase.isUnlocked {
+                        await cloudBackup.prepare()
+                    }
                     scheduleCloudBackup()
                     try? await Task.sleep(nanoseconds: 700_000_000)
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.88)) {
@@ -32,7 +36,6 @@ struct MintLedgerApp: App {
                     }
                 }
                 .onOpenURL { url in
-                    if GIDSignIn.sharedInstance.handle(url) { return }
                     store.reload()
                     SharedLedgerStorage.refreshWidget()
                     scheduleCloudBackup()
@@ -42,7 +45,13 @@ struct MintLedgerApp: App {
                     store.reload()
                     store.runDueRecurringEntries()
                     SharedLedgerStorage.refreshWidget()
-                    scheduleCloudBackup()
+                    Task {
+                        await cloudBackupPurchase.refreshEntitlement()
+                        if cloudBackupPurchase.isUnlocked {
+                            await cloudBackup.refreshAccountStatus()
+                            scheduleCloudBackup()
+                        }
+                    }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .ledgerStoreDidPersist)) { _ in
                     scheduleCloudBackup()
@@ -51,8 +60,9 @@ struct MintLedgerApp: App {
     }
 
     private func scheduleCloudBackup() {
+        guard cloudBackupPurchase.isUnlocked else { return }
         guard let data = try? store.encodedBackup() else { return }
-        googleDriveBackup.scheduleAutomaticBackup(data: data)
+        cloudBackup.scheduleAutomaticBackup(data: data)
     }
 }
 
