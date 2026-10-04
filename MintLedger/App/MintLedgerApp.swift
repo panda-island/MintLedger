@@ -25,11 +25,13 @@ struct MintLedgerApp: App {
                     store.reload()
                     store.runDueRecurringEntries()
                     SharedLedgerStorage.refreshWidget()
-                    await cloudBackupPurchase.prepare()
-                    if cloudBackupPurchase.isUnlocked {
-                        await cloudBackup.prepare()
+                    if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+                        await cloudBackupPurchase.prepare()
+                        if cloudBackupPurchase.isUnlocked {
+                            await cloudBackup.prepare()
+                        }
+                        scheduleCloudBackup()
                     }
-                    scheduleCloudBackup()
                     try? await Task.sleep(nanoseconds: 700_000_000)
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.88)) {
                         showsLaunchAnimation = false

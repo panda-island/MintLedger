@@ -19,12 +19,8 @@ final class ICloudBackupService {
     private(set) var lastBackupDate: Date?
     private(set) var lastError: String?
 
-    private let container: CKContainer
+    private lazy var container = CKContainer(identifier: Self.containerIdentifier)
     private var pendingAutomaticBackup: Task<Void, Never>?
-
-    init() {
-        container = CKContainer(identifier: Self.containerIdentifier)
-    }
 
     var isAvailable: Bool { accountStatus == .available }
 
