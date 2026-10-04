@@ -160,7 +160,7 @@ final class ICloudBackupService {
             entries = Array(entries.prefix(30))
             try await saveIndex(entries)
             for entry in expired {
-                try? await database.deleteRecord(withID: CKRecord.ID(recordName: entry.id))
+                _ = try? await database.deleteRecord(withID: CKRecord.ID(recordName: entry.id))
             }
 
             backups = entries.map { ICloudBackupFile(id: $0.id, modifiedAt: $0.modifiedAt, size: $0.size) }
@@ -197,7 +197,7 @@ final class ICloudBackupService {
         guard let ckError = error as? CKError else {
             return "iCloud 備份失敗：\(error.localizedDescription)"
         }
-        switch ckError.code {
+        return switch ckError.code {
         case .notAuthenticated: "請先在 iPhone「設定」登入 iCloud，並開啟 iCloud Drive。"
         case .networkFailure, .networkUnavailable: "目前無法連上 iCloud，請檢查網路後再試。"
         case .quotaExceeded: "iCloud 儲存空間不足，請先釋出空間。"
