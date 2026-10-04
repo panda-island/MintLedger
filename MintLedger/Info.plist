@@ -18,10 +18,10 @@
     <key>CFBundleTypeName</key><string>MintLedger Backup</string>
     <key>CFBundleTypeRole</key><string>Viewer</string>
     <key>LSHandlerRank</key><string>Owner</string>
-    <key>LSItemContentTypes</key><array><string>com.a0973.mintledger.backup</string></array>
+    <key>LSItemContentTypes</key><array><string>com.pandaisland.mintledger.backup</string></array>
   </dict></array>
   <key>UTExportedTypeDeclarations</key><array><dict>
-    <key>UTTypeIdentifier</key><string>com.a0973.mintledger.backup</string>
+    <key>UTTypeIdentifier</key><string>com.pandaisland.mintledger.backup</string>
     <key>UTTypeDescription</key><string>MintLedger Backup</string>
     <key>UTTypeConformsTo</key><array><string>public.json</string></array>
     <key>UTTypeTagSpecification</key><dict><key>public.filename-extension</key><array><string>mintledger</string></array></dict>

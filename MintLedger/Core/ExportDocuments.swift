@@ -2,7 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 extension UTType {
-    static let mintLedgerBackup = UTType(exportedAs: "com.a0973.mintledger.backup", conformingTo: .json)
+    static let mintLedgerBackup = UTType(exportedAs: "com.pandaisland.mintledger.backup", conformingTo: .json)
 }
 
 enum BackupFileReader {

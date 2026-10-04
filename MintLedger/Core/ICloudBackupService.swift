@@ -11,7 +11,7 @@ struct ICloudBackupFile: Identifiable, Equatable, Sendable {
 @MainActor
 @Observable
 final class ICloudBackupService {
-    static let containerIdentifier = "iCloud.app.mulberry1261.emerald6299"
+    static let containerIdentifier = "iCloud.com.pandaisland.mintledger"
 
     private(set) var accountStatus: CKAccountStatus = .couldNotDetermine
     private(set) var isWorking = false

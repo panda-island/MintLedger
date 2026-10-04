@@ -2,11 +2,13 @@
 
 ## Apple Developer 後台
 
-1. 在 Certificates, Identifiers & Profiles 建立或確認明確 App ID：`app.mulberry1261.emerald6299`。
-2. 為主 App ID 指派 App Group：`group.063105cc445c1ae9.1`。
-3. 建立 iCloud Container：`iCloud.app.mulberry1261.emerald6299`。
+> Bundle ID 已由舊版更換為正式識別碼。iOS 會把新版視為另一個 App；安裝前請先用舊版匯出 `.mintledger` 備份，安裝新版後再還原。
+
+1. 在 Certificates, Identifiers & Profiles 建立或確認明確 App ID：`com.pandaisland.mintledger`。
+2. 為主 App ID 指派 App Group：`group.com.pandaisland.mintledger`。
+3. 建立 iCloud Container：`iCloud.com.pandaisland.mintledger`。
 4. 編輯主 App ID，開啟 iCloud，選擇 CloudKit，並指派上述容器。
-5. Widget App ID `app.mulberry1261.emerald6299.Widget` 只需指派同一個 App Group。
+5. Widget App ID `com.pandaisland.mintledger.widget` 只需指派同一個 App Group。
 6. 建立 Apple Distribution 憑證並匯出成 `.p12`。舊第三方帳號的憑證與描述檔不能沿用到你的新 Team。
 
 ## App Store Connect
@@ -15,11 +17,20 @@
 2. 建立 Bundle ID 相同的新 App。
 3. 在「營利／App 內購買項目」新增「非消耗型」商品：
    - 參考名稱：`iCloud 雲端備份永久版`
-   - 產品 ID：`app.mulberry1261.emerald6299.cloudbackup.lifetime`
+   - 產品 ID：`com.pandaisland.mintledger.cloudbackup.lifetime`
    - 台灣價格：`NT$60`
    - 顯示名稱：`iCloud 雲端備份永久版`
    - 說明：`一次購買，永久開啟自動 iCloud 備份與還原功能。`
 4. 建立 App Store Connect API Key，角色至少為 Developer，下載只會出現一次的 `.p8` 私鑰，並記下 Key ID 與 Issuer ID。
+
+## 審查與商店頁面網址
+
+- 行銷 URL：`https://mintledger-support.mingray-ai.chatgpt.site/`
+- 支援 URL：`https://mintledger-support.mingray-ai.chatgpt.site/support/`
+- 隱私權政策 URL：`https://mintledger-support.mingray-ai.chatgpt.site/privacy/`
+- EULA 說明頁：`https://mintledger-support.mingray-ai.chatgpt.site/eula/`
+
+App Store Connect 的自訂 EULA 欄位只接受純文字，不接受 URL。MintLedger 目前採用 Apple 標準 EULA，因此可不填自訂 EULA；網站的 EULA 頁已連結 Apple 標準條款並提供 App 專屬補充說明。
 
 ## GitHub Secrets
 

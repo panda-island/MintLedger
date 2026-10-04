@@ -5,7 +5,7 @@ import StoreKit
 @MainActor
 @Observable
 final class CloudBackupPurchaseService {
-    static let productID = "app.mulberry1261.emerald6299.cloudbackup.lifetime"
+    static let productID = "com.pandaisland.mintledger.cloudbackup.lifetime"
 
     private(set) var product: Product?
     private(set) var isUnlocked = false

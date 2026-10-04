@@ -44,6 +44,17 @@ struct SettingsView: View {
                         .foregroundStyle(.orange)
                 }
             }
+            Section("支援與法律") {
+                Link(destination: URL(string: "https://mintledger-support.mingray-ai.chatgpt.site/support/")!) {
+                    Label("使用支援", systemImage: "questionmark.circle")
+                }
+                Link(destination: URL(string: "https://mintledger-support.mingray-ai.chatgpt.site/privacy/")!) {
+                    Label("隱私權政策", systemImage: "hand.raised")
+                }
+                Link(destination: URL(string: "https://mintledger-support.mingray-ai.chatgpt.site/eula/")!) {
+                    Label("最終使用者授權協議", systemImage: "doc.text")
+                }
+            }
             Section("關於") {
                 LabeledContent("版本", value: appVersion)
                 LabeledContent("資料格式", value: "MintLedger v1 JSON")

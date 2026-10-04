@@ -5,11 +5,11 @@ enum SharedLedgerStorage {
     // This group is authorized by the sideloading profile used for the main app.
     // The Widget target keeps the same shared-storage contract and can be enabled
     // once a provisioning profile also authorizes its separate App ID.
-    static let appGroupID = "group.063105cc445c1ae9.1"
+    static let appGroupID = "group.com.pandaisland.mintledger"
     static let filename = "ledger-v1.json"
     static let widgetKind = "MintLedgerSummaryWidget"
     static var darwinNotificationName: CFNotificationName {
-        CFNotificationName(rawValue: "app.mulberry1261.emerald6299.dataChanged" as CFString)
+        CFNotificationName(rawValue: "com.pandaisland.mintledger.dataChanged" as CFString)
     }
 
     static func dataURL(fileManager: FileManager = .default) throws -> URL {

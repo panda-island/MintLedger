@@ -5,4 +5,5 @@ build/
 *.xcodeproj/xcuserdata/
 *.ipa
 *.zip
-
+.sites-artifacts/
+mintledger-review-site/

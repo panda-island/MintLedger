@@ -29,7 +29,7 @@ xcodegen generate
 open MintLedger.xcodeproj
 ```
 
-首次使用 Apple Developer 帳號編譯時，請在 Certificates, Identifiers & Profiles 為 `app.mulberry1261.emerald6299` 啟用 App Groups 與 iCloud/CloudKit，建立並指派 `iCloud.app.mulberry1261.emerald6299` 容器，再重新產生 provisioning profile。App Store Connect 需建立產品 ID `app.mulberry1261.emerald6299.cloudbackup.lifetime` 的非消耗型 App 內購買，台灣價格設為 NT$60。
+首次使用 Apple Developer 帳號編譯時，請在 Certificates, Identifiers & Profiles 為 `com.pandaisland.mintledger` 啟用 App Groups 與 iCloud/CloudKit，建立並指派 `iCloud.com.pandaisland.mintledger` 容器，再重新產生 provisioning profile。App Store Connect 需建立產品 ID `com.pandaisland.mintledger.cloudbackup.lifetime` 的非消耗型 App 內購買，台灣價格設為 NT$60。
 
 ## 下載與側載
 
@@ -40,6 +40,10 @@ open MintLedger.xcodeproj
 ## 隱私
 
 MintLedger 沒有分析或廣告 SDK。主 App、捷徑與 Widget 只透過 App Group 分享本機 JSON；購買雲端備份後，完整備份只會上傳到目前使用者自己的 CloudKit 私人資料庫，並占用該使用者的 iCloud 配額。帳本資料使用 `completeUntilFirstUserAuthentication` 檔案保護，使使用者開機後首次解鎖後，鎖定畫面的捷徑仍能新增交易。
+
+- [使用支援](https://mintledger-support.mingray-ai.chatgpt.site/support/)
+- [隱私權政策](https://mintledger-support.mingray-ai.chatgpt.site/privacy/)
+- [EULA](https://mintledger-support.mingray-ai.chatgpt.site/eula/)
 
 ## 授權
 
