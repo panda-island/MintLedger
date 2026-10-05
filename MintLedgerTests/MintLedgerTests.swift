@@ -61,9 +61,8 @@ final class MintLedgerTests: XCTestCase {
         XCTAssertEqual(SharedLedgerStorage.appGroupID, "group.com.pandaisland.mintledger")
     }
 
-    func testCloudBackupUsesAppSpecificIdentifiers() {
+    func testCloudBackupUsesAppSpecificIdentifier() {
         XCTAssertEqual(ICloudBackupService.containerIdentifier, "iCloud.com.pandaisland.mintledger")
-        XCTAssertEqual(CloudBackupPurchaseService.productID, "com.pandaisland.mintledger.cloudbackup.lifetime")
     }
 
     func testAppendingAnOperatorReplacesThePreviousOperator() {

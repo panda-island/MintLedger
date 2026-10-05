@@ -10,7 +10,7 @@ MintLedger 是一款離線優先、以繁體中文設計的 iPhone 記帳 App。
 - 明細依月份分組統計，可搜尋、篩選、批次刪除及批次更改分類
 - 點選單筆明細可查看詳細資料並編輯，金額鍵盤支援加減乘除
 - 自動輪替最近 10 份本機備份
-- 可用一次性 App 內購買永久開啟 iCloud 私人雲端備份：每天一個版本，自動更新並保留最近 30 天
+- 免費提供 iCloud 私人雲端備份：每天一個版本，自動更新並保留最近 30 天
 - `.mintledger` JSON 完整匯出／還原及 CSV 匯出
 - App Intent、Siri 與捷徑直接記帳；`alwaysAllowed` 支援裝置鎖定時執行，App 會即時同步新資料
 - 4×2 桌面小工具顯示總資產與近期明細，2×1 鎖定畫面小工具顯示總資產
@@ -29,7 +29,7 @@ xcodegen generate
 open MintLedger.xcodeproj
 ```
 
-首次使用 Apple Developer 帳號編譯時，請在 Certificates, Identifiers & Profiles 為 `com.pandaisland.mintledger` 啟用 App Groups 與 iCloud/CloudKit，建立並指派 `iCloud.com.pandaisland.mintledger` 容器，再重新產生 provisioning profile。App Store Connect 需建立產品 ID `com.pandaisland.mintledger.cloudbackup.lifetime` 的非消耗型 App 內購買，台灣價格設為 NT$60。
+首次使用 Apple Developer 帳號編譯時，請在 Certificates, Identifiers & Profiles 為 `com.pandaisland.mintledger` 啟用 App Groups 與 iCloud/CloudKit，建立並指派 `iCloud.com.pandaisland.mintledger` 容器，再重新產生 provisioning profile。所有 App 功能均免費，不需要建立 App 內購買項目。
 
 ## 下載與側載
 
@@ -39,11 +39,12 @@ open MintLedger.xcodeproj
 
 ## 隱私
 
-MintLedger 沒有分析或廣告 SDK。主 App、捷徑與 Widget 只透過 App Group 分享本機 JSON；購買雲端備份後，完整備份只會上傳到目前使用者自己的 CloudKit 私人資料庫，並占用該使用者的 iCloud 配額。帳本資料使用 `completeUntilFirstUserAuthentication` 檔案保護，使使用者開機後首次解鎖後，鎖定畫面的捷徑仍能新增交易。
+MintLedger 沒有分析或廣告 SDK。主 App、捷徑與 Widget 只透過 App Group 分享本機 JSON；使用免費雲端備份時，完整備份只會上傳到目前使用者自己的 CloudKit 私人資料庫，並占用該使用者的 iCloud 配額。帳本資料使用 `completeUntilFirstUserAuthentication` 檔案保護，使使用者開機後首次解鎖後，鎖定畫面的捷徑仍能新增交易。
 
-- [使用支援](https://mintledger-support.mingray-ai.chatgpt.site/support/)
-- [隱私權政策](https://mintledger-support.mingray-ai.chatgpt.site/privacy/)
-- [EULA](https://mintledger-support.mingray-ai.chatgpt.site/eula/)
+- [產品網站](https://panda-island.github.io/MintLedger/)
+- [使用支援](https://panda-island.github.io/MintLedger/support/)
+- [隱私權政策](https://panda-island.github.io/MintLedger/privacy/)
+- [EULA](https://panda-island.github.io/MintLedger/eula/)
 
 ## 授權
 

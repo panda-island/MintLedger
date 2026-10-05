@@ -5,7 +5,6 @@ struct MintLedgerApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var store = LedgerStore()
     @State private var cloudBackup = ICloudBackupService()
-    @State private var cloudBackupPurchase = CloudBackupPurchaseService()
     @State private var showsLaunchAnimation = true
 
     var body: some Scene {
@@ -13,7 +12,6 @@ struct MintLedgerApp: App {
             RootView()
                 .environment(store)
                 .environment(cloudBackup)
-                .environment(cloudBackupPurchase)
                 .overlay {
                     if showsLaunchAnimation {
                         LaunchAnimationView()
@@ -26,10 +24,7 @@ struct MintLedgerApp: App {
                     store.runDueRecurringEntries()
                     SharedLedgerStorage.refreshWidget()
                     if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
-                        await cloudBackupPurchase.prepare()
-                        if cloudBackupPurchase.isUnlocked {
-                            await cloudBackup.prepare()
-                        }
+                        await cloudBackup.prepare()
                         scheduleCloudBackup()
                     }
                     try? await Task.sleep(nanoseconds: 700_000_000)
@@ -48,11 +43,8 @@ struct MintLedgerApp: App {
                     store.runDueRecurringEntries()
                     SharedLedgerStorage.refreshWidget()
                     Task {
-                        await cloudBackupPurchase.refreshEntitlement()
-                        if cloudBackupPurchase.isUnlocked {
-                            await cloudBackup.refreshAccountStatus()
-                            scheduleCloudBackup()
-                        }
+                        await cloudBackup.refreshAccountStatus()
+                        scheduleCloudBackup()
                     }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .ledgerStoreDidPersist)) { _ in
@@ -62,7 +54,6 @@ struct MintLedgerApp: App {
     }
 
     private func scheduleCloudBackup() {
-        guard cloudBackupPurchase.isUnlocked else { return }
         guard let data = try? store.encodedBackup() else { return }
         cloudBackup.scheduleAutomaticBackup(data: data)
     }

@@ -13,22 +13,16 @@
 
 ## App Store Connect
 
-1. 接受「付費 App 協議」，填妥銀行與稅務資料。
-2. 建立 Bundle ID 相同的新 App。
-3. 在「營利／App 內購買項目」新增「非消耗型」商品：
-   - 參考名稱：`iCloud 雲端備份永久版`
-   - 產品 ID：`com.pandaisland.mintledger.cloudbackup.lifetime`
-   - 台灣價格：`NT$60`
-   - 顯示名稱：`iCloud 雲端備份永久版`
-   - 說明：`一次購買，永久開啟自動 iCloud 備份與還原功能。`
-4. 建立 App Store Connect API Key，角色至少為 Developer，下載只會出現一次的 `.p8` 私鑰，並記下 Key ID 與 Issuer ID。
+1. 建立 Bundle ID 相同的新 App，價格設定為免費。
+2. 所有功能（包含 iCloud 備份）均免費，不需要建立 App 內購買項目。
+3. 建立 App Store Connect API Key，角色至少為 Developer，下載只會出現一次的 `.p8` 私鑰，並記下 Key ID 與 Issuer ID。
 
 ## 審查與商店頁面網址
 
-- 行銷 URL：`https://mintledger-support.mingray-ai.chatgpt.site/`
-- 支援 URL：`https://mintledger-support.mingray-ai.chatgpt.site/support/`
-- 隱私權政策 URL：`https://mintledger-support.mingray-ai.chatgpt.site/privacy/`
-- EULA 說明頁：`https://mintledger-support.mingray-ai.chatgpt.site/eula/`
+- 行銷 URL：`https://panda-island.github.io/MintLedger/`
+- 支援 URL：`https://panda-island.github.io/MintLedger/support/`
+- 隱私權政策 URL：`https://panda-island.github.io/MintLedger/privacy/`
+- EULA 說明頁：`https://panda-island.github.io/MintLedger/eula/`
 
 App Store Connect 的自訂 EULA 欄位只接受純文字，不接受 URL。MintLedger 目前採用 Apple 標準 EULA，因此可不填自訂 EULA；網站的 EULA 頁已連結 Apple 標準條款並提供 App 專屬補充說明。
 

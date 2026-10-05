@@ -5,7 +5,6 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @Environment(LedgerStore.self) private var store
     @Environment(ICloudBackupService.self) private var cloudBackup
-    @Environment(CloudBackupPurchaseService.self) private var cloudBackupPurchase
     @Environment(\.openURL) private var openURL
     @State private var exportDocument = BackupDocument()
     @State private var csvDocument = CSVDocument(data: Data())
@@ -45,13 +44,13 @@ struct SettingsView: View {
                 }
             }
             Section("支援與法律") {
-                Link(destination: URL(string: "https://mintledger-support.mingray-ai.chatgpt.site/support/")!) {
+                Link(destination: URL(string: "https://panda-island.github.io/MintLedger/support/")!) {
                     Label("使用支援", systemImage: "questionmark.circle")
                 }
-                Link(destination: URL(string: "https://mintledger-support.mingray-ai.chatgpt.site/privacy/")!) {
+                Link(destination: URL(string: "https://panda-island.github.io/MintLedger/privacy/")!) {
                     Label("隱私權政策", systemImage: "hand.raised")
                 }
-                Link(destination: URL(string: "https://mintledger-support.mingray-ai.chatgpt.site/eula/")!) {
+                Link(destination: URL(string: "https://panda-island.github.io/MintLedger/eula/")!) {
                     Label("最終使用者授權協議", systemImage: "doc.text")
                 }
             }
@@ -62,8 +61,7 @@ struct SettingsView: View {
         }
         .navigationTitle("設定")
         .task {
-            await cloudBackupPurchase.prepare()
-            if cloudBackupPurchase.isUnlocked { await cloudBackup.prepare() }
+            await cloudBackup.prepare()
         }
         .fileExporter(isPresented: $exportingBackup, document: exportDocument, contentType: .mintLedgerBackup, defaultFilename: "MintLedger-Backup") { result in report(result, success: "備份已匯出") }
         .fileExporter(isPresented: $exportingCSV, document: csvDocument, contentType: .commaSeparatedText, defaultFilename: "MintLedger-Transactions") { result in report(result, success: "CSV 已匯出") }
@@ -75,7 +73,7 @@ struct SettingsView: View {
 
     private var privacySection: some View {
         Section("隱私") {
-            if cloudBackupPurchase.isUnlocked, cloudBackup.isAvailable {
+            if cloudBackup.isAvailable {
                 Label("帳本只備份到你自己的 iCloud 私人資料庫", systemImage: "checkmark.shield.fill")
                     .foregroundStyle(.green)
             } else {
@@ -90,61 +88,48 @@ struct SettingsView: View {
 
     private var cloudBackupSection: some View {
         Section("iCloud 雲端備份") {
-            if cloudBackupPurchase.isUnlocked {
-                Label("永久版已開啟", systemImage: "checkmark.seal.fill")
-                    .foregroundStyle(.green)
-                LabeledContent("iCloud", value: cloudBackup.accountStatusText)
+            Label("所有雲端備份功能皆免費", systemImage: "checkmark.seal.fill")
+                .foregroundStyle(.green)
+            LabeledContent("iCloud", value: cloudBackup.accountStatusText)
 
-                if cloudBackup.isAvailable {
-                    if let date = cloudBackup.lastBackupDate {
-                        LabeledContent("最近備份") {
-                            Text(date, format: .dateTime.year().month().day().hour().minute())
-                        }
-                    } else {
-                        LabeledContent("最近備份", value: "尚未備份")
-                    }
-
-                    Button { backupToICloud() } label: {
-                        Label("立即備份", systemImage: "arrow.triangle.2.circlepath.icloud.fill")
-                    }
-                    .disabled(cloudBackup.isWorking)
-
-                    NavigationLink {
-                        ICloudBackupsView()
-                    } label: {
-                        Label("查看與還原雲端備份", systemImage: "clock.arrow.circlepath")
+            if cloudBackup.isAvailable {
+                if let date = cloudBackup.lastBackupDate {
+                    LabeledContent("最近備份") {
+                        Text(date, format: .dateTime.year().month().day().hour().minute())
                     }
                 } else {
-                    Button {
-                        openURL(URL(string: UIApplication.openSettingsURLString)!)
-                    } label: {
-                        Label("開啟 iPhone 設定", systemImage: "gear")
-                    }
-                    Text("請在 iPhone 登入 iCloud 並開啟 iCloud Drive，回到 App 後會自動重新檢查。")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    LabeledContent("最近備份", value: "尚未備份")
+                }
+
+                Button { backupToICloud() } label: {
+                    Label("立即備份", systemImage: "arrow.triangle.2.circlepath.icloud.fill")
+                }
+                .disabled(cloudBackup.isWorking)
+
+                NavigationLink {
+                    ICloudBackupsView()
+                } label: {
+                    Label("查看與還原雲端備份", systemImage: "clock.arrow.circlepath")
                 }
             } else {
-                Label("自動保留最近 30 天的每日備份，可隨時選擇日期還原。一次購買，不會自動續費。", systemImage: "icloud.and.arrow.up")
-                    .font(.subheadline)
-                Button { purchaseCloudBackup() } label: {
-                    Label("永久開啟（\(cloudBackupPurchase.displayPrice)）", systemImage: "lock.open.fill")
+                Button {
+                    openURL(URL(string: UIApplication.openSettingsURLString)!)
+                } label: {
+                    Label("開啟 iPhone 設定", systemImage: "gear")
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(cloudBackupPurchase.isWorking)
-
-                Button("恢復購買") { restoreCloudBackupPurchase() }
-                    .disabled(cloudBackupPurchase.isWorking)
+                Text("請在 iPhone 登入 iCloud 並開啟 iCloud Drive，回到 App 後會自動重新檢查。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
 
-            if cloudBackup.isWorking || cloudBackupPurchase.isWorking {
+            if cloudBackup.isWorking {
                 HStack {
                     ProgressView()
-                    Text(cloudBackupPurchase.isWorking ? "正在連接 App Store…" : "正在連接 iCloud…")
+                    Text("正在連接 iCloud…")
                         .foregroundStyle(.secondary)
                 }
             }
-            if let error = cloudBackupPurchase.lastError ?? cloudBackup.lastError {
+            if let error = cloudBackup.lastError {
                 Label(error, systemImage: "exclamationmark.triangle.fill")
                     .font(.footnote)
                     .foregroundStyle(.orange)
@@ -155,25 +140,6 @@ struct SettingsView: View {
     private func exportBackup() {
         do { exportDocument = BackupDocument(data: try store.encodedBackup()); exportingBackup = true }
         catch { statusMessage = error.localizedDescription }
-    }
-
-    private func purchaseCloudBackup() {
-        Task {
-            guard await cloudBackupPurchase.purchase() else { return }
-            await cloudBackup.prepare()
-            if cloudBackup.isAvailable, let data = try? store.encodedBackup() {
-                await cloudBackup.backupNow(data: data)
-            }
-            statusMessage = "iCloud 雲端備份已永久開啟"
-        }
-    }
-
-    private func restoreCloudBackupPurchase() {
-        Task {
-            guard await cloudBackupPurchase.restorePurchases() else { return }
-            await cloudBackup.prepare()
-            statusMessage = "購買紀錄已恢復，iCloud 雲端備份已開啟"
-        }
     }
 
     private func backupToICloud() {
