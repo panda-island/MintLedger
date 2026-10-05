@@ -23,7 +23,7 @@ struct MintLedgerApp: App {
                     store.reload()
                     store.runDueRecurringEntries()
                     SharedLedgerStorage.refreshWidget()
-                    if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+                    if !isRunningTests {
                         await cloudBackup.prepare()
                         scheduleCloudBackup()
                     }
@@ -42,6 +42,7 @@ struct MintLedgerApp: App {
                     store.reload()
                     store.runDueRecurringEntries()
                     SharedLedgerStorage.refreshWidget()
+                    guard !isRunningTests else { return }
                     Task {
                         await cloudBackup.refreshAccountStatus()
                         scheduleCloudBackup()
@@ -54,8 +55,17 @@ struct MintLedgerApp: App {
     }
 
     private func scheduleCloudBackup() {
+        guard !isRunningTests else { return }
         guard let data = try? store.encodedBackup() else { return }
         cloudBackup.scheduleAutomaticBackup(data: data)
+    }
+
+    private var isRunningTests: Bool {
+        let environment = ProcessInfo.processInfo.environment
+        return environment["XCTestConfigurationFilePath"] != nil
+            || environment["XCTestBundlePath"] != nil
+            || environment["XCInjectBundleInto"] != nil
+            || NSClassFromString("XCTestCase") != nil
     }
 }
 
