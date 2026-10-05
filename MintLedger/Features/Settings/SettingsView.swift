@@ -44,13 +44,13 @@ struct SettingsView: View {
                 }
             }
             Section("支援與法律") {
-                Link(destination: URL(string: "https://panda-island.github.io/MintLedger/support/")!) {
+                Link(destination: URL(string: "https://panda-island.github.io/MintLedger-Site/support/")!) {
                     Label("使用支援", systemImage: "questionmark.circle")
                 }
-                Link(destination: URL(string: "https://panda-island.github.io/MintLedger/privacy/")!) {
+                Link(destination: URL(string: "https://panda-island.github.io/MintLedger-Site/privacy/")!) {
                     Label("隱私權政策", systemImage: "hand.raised")
                 }
-                Link(destination: URL(string: "https://panda-island.github.io/MintLedger/eula/")!) {
+                Link(destination: URL(string: "https://panda-island.github.io/MintLedger-Site/eula/")!) {
                     Label("最終使用者授權協議", systemImage: "doc.text")
                 }
             }

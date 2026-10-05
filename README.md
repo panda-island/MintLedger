@@ -41,10 +41,10 @@ open MintLedger.xcodeproj
 
 MintLedger 沒有分析或廣告 SDK。主 App、捷徑與 Widget 只透過 App Group 分享本機 JSON；使用免費雲端備份時，完整備份只會上傳到目前使用者自己的 CloudKit 私人資料庫，並占用該使用者的 iCloud 配額。帳本資料使用 `completeUntilFirstUserAuthentication` 檔案保護，使使用者開機後首次解鎖後，鎖定畫面的捷徑仍能新增交易。
 
-- [產品網站](https://panda-island.github.io/MintLedger/)
-- [使用支援](https://panda-island.github.io/MintLedger/support/)
-- [隱私權政策](https://panda-island.github.io/MintLedger/privacy/)
-- [EULA](https://panda-island.github.io/MintLedger/eula/)
+- [產品網站](https://panda-island.github.io/MintLedger-Site/)
+- [使用支援](https://panda-island.github.io/MintLedger-Site/support/)
+- [隱私權政策](https://panda-island.github.io/MintLedger-Site/privacy/)
+- [EULA](https://panda-island.github.io/MintLedger-Site/eula/)
 
 ## 授權
 

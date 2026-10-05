@@ -19,10 +19,10 @@
 
 ## 審查與商店頁面網址
 
-- 行銷 URL：`https://panda-island.github.io/MintLedger/`
-- 支援 URL：`https://panda-island.github.io/MintLedger/support/`
-- 隱私權政策 URL：`https://panda-island.github.io/MintLedger/privacy/`
-- EULA 說明頁：`https://panda-island.github.io/MintLedger/eula/`
+- 行銷 URL：`https://panda-island.github.io/MintLedger-Site/`
+- 支援 URL：`https://panda-island.github.io/MintLedger-Site/support/`
+- 隱私權政策 URL：`https://panda-island.github.io/MintLedger-Site/privacy/`
+- EULA 說明頁：`https://panda-island.github.io/MintLedger-Site/eula/`
 
 App Store Connect 的自訂 EULA 欄位只接受純文字，不接受 URL。MintLedger 目前採用 Apple 標準 EULA，因此可不填自訂 EULA；網站的 EULA 頁已連結 Apple 標準條款並提供 App 專屬補充說明。
 
