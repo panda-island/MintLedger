@@ -36,6 +36,7 @@ targets:
         embed: true
       - target: MintLedgerWatch
         embed: true
+        platformFilter: iOS
         copy:
           destination: productsDirectory
           subpath: "$(CONTENTS_FOLDER_PATH)/Watch"
