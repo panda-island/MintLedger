@@ -5,6 +5,7 @@ struct MintLedgerApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var store = LedgerStore()
     @State private var cloudBackup = ICloudBackupService()
+    @State private var watchSync = PhoneWatchSyncService()
     @State private var showsLaunchAnimation = true
 
     var body: some Scene {
@@ -24,6 +25,7 @@ struct MintLedgerApp: App {
                     store.runDueRecurringEntries()
                     SharedLedgerStorage.refreshWidget()
                     if !isRunningTests {
+                        watchSync.start(store: store)
                         await cloudBackup.prepare()
                         scheduleCloudBackup()
                     }
@@ -49,6 +51,7 @@ struct MintLedgerApp: App {
                     }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .ledgerStoreDidPersist)) { _ in
+                    watchSync.sendSnapshot()
                     scheduleCloudBackup()
                 }
         }

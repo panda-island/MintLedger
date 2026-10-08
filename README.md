@@ -1,6 +1,6 @@
 # MintLedger
 
-MintLedger 是一款離線優先、以繁體中文設計的 iPhone 記帳 App。所有資料預設只保存在本機，並使用 iOS 26 原生 Liquid Glass 呈現互動介面。
+MintLedger 是一款離線優先、以繁體中文設計的 iPhone 與 Apple Watch 記帳 App。所有資料預設只保存在使用者裝置，並使用 iOS 26 原生 Liquid Glass 呈現互動介面。
 
 ## 功能
 
@@ -14,6 +14,7 @@ MintLedger 是一款離線優先、以繁體中文設計的 iPhone 記帳 App。
 - `.mintledger` JSON 完整匯出／還原及 CSV 匯出
 - App Intent、Siri 與捷徑直接記帳；`alwaysAllowed` 支援裝置鎖定時執行，App 會即時同步新資料
 - 4×2 桌面小工具顯示總資產與近期明細，2×1 鎖定畫面小工具顯示總資產
+- Apple Watch 可查看總資產與近期明細，並快速新增收入或支出；透過 WatchConnectivity 與 iPhone 雙向同步
 - iOS 26 原生 Liquid Glass，iOS 17–25 使用原生材質退路
 - 原創 1024×1024 App Icon
 
@@ -21,6 +22,7 @@ MintLedger 是一款離線優先、以繁體中文設計的 iPhone 記帳 App。
 
 - Xcode 26+
 - iOS 17+
+- watchOS 10+
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen)
 
 ```bash
@@ -29,7 +31,7 @@ xcodegen generate
 open MintLedger.xcodeproj
 ```
 
-首次使用 Apple Developer 帳號編譯時，請在 Certificates, Identifiers & Profiles 為 `com.pandaisland.mintledger` 啟用 App Groups 與 iCloud/CloudKit，建立並指派 `iCloud.com.pandaisland.mintledger` 容器，再重新產生 provisioning profile。所有 App 功能均免費，不需要建立 App 內購買項目。
+首次使用 Apple Developer 帳號編譯時，請在 Certificates, Identifiers & Profiles 為 `com.pandaisland.mintledger` 啟用 App Groups 與 iCloud/CloudKit，建立並指派 `iCloud.com.pandaisland.mintledger` 容器；另外建立 `com.pandaisland.mintledger.watchkitapp` Watch App ID，再重新產生各 target 的 provisioning profile。所有 App 功能均免費，不需要建立 App 內購買項目。
 
 ## 下載與側載
 
@@ -39,7 +41,7 @@ open MintLedger.xcodeproj
 
 ## 隱私
 
-MintLedger 沒有分析或廣告 SDK。主 App、捷徑與 Widget 只透過 App Group 分享本機 JSON；使用免費雲端備份時，完整備份只會上傳到目前使用者自己的 CloudKit 私人資料庫，並占用該使用者的 iCloud 配額。帳本資料使用 `completeUntilFirstUserAuthentication` 檔案保護，使使用者開機後首次解鎖後，鎖定畫面的捷徑仍能新增交易。
+MintLedger 沒有分析或廣告 SDK。主 App、捷徑與 Widget 只透過 App Group 分享本機 JSON，Apple Watch 與 iPhone 之間則使用 Apple 的 WatchConnectivity 傳輸帳本快照與新增帳目；使用免費雲端備份時，完整備份只會上傳到目前使用者自己的 CloudKit 私人資料庫，並占用該使用者的 iCloud 配額。帳本資料使用 `completeUntilFirstUserAuthentication` 檔案保護，使使用者開機後首次解鎖後，鎖定畫面的捷徑仍能新增交易。
 
 - [產品網站](https://panda-island.github.io/MintLedger-Site/)
 - [使用支援](https://panda-island.github.io/MintLedger-Site/support/)

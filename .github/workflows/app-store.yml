@@ -38,6 +38,7 @@ jobs:
         env:
           APP_PROVISIONING_PROFILE_BASE64: ${{ secrets.APP_PROVISIONING_PROFILE_BASE64 }}
           WIDGET_PROVISIONING_PROFILE_BASE64: ${{ secrets.WIDGET_PROVISIONING_PROFILE_BASE64 }}
+          WATCH_PROVISIONING_PROFILE_BASE64: ${{ secrets.WATCH_PROVISIONING_PROFILE_BASE64 }}
         shell: bash
         run: |
           set -euo pipefail
@@ -46,24 +47,32 @@ jobs:
 
           APP_PROFILE_RAW="$RUNNER_TEMP/app.mobileprovision"
           WIDGET_PROFILE_RAW="$RUNNER_TEMP/widget.mobileprovision"
+          WATCH_PROFILE_RAW="$RUNNER_TEMP/watch.mobileprovision"
           printf '%s' "$APP_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$APP_PROFILE_RAW"
           printf '%s' "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$WIDGET_PROFILE_RAW"
+          printf '%s' "$WATCH_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$WATCH_PROFILE_RAW"
 
           security cms -D -i "$APP_PROFILE_RAW" > "$RUNNER_TEMP/app-profile.plist"
           security cms -D -i "$WIDGET_PROFILE_RAW" > "$RUNNER_TEMP/widget-profile.plist"
+          security cms -D -i "$WATCH_PROFILE_RAW" > "$RUNNER_TEMP/watch-profile.plist"
 
           APP_PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/app-profile.plist")
           WIDGET_PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/widget-profile.plist")
+          WATCH_PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/watch-profile.plist")
           APP_PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/app-profile.plist")
           WIDGET_PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/widget-profile.plist")
+          WATCH_PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/watch-profile.plist")
 
           cp "$APP_PROFILE_RAW" "$PROFILE_DIR/$APP_PROFILE_UUID.mobileprovision"
           cp "$WIDGET_PROFILE_RAW" "$PROFILE_DIR/$WIDGET_PROFILE_UUID.mobileprovision"
+          cp "$WATCH_PROFILE_RAW" "$PROFILE_DIR/$WATCH_PROFILE_UUID.mobileprovision"
 
           echo "APP_PROFILE_NAME=$APP_PROFILE_NAME" >> "$GITHUB_ENV"
           echo "WIDGET_PROFILE_NAME=$WIDGET_PROFILE_NAME" >> "$GITHUB_ENV"
+          echo "WATCH_PROFILE_NAME=$WATCH_PROFILE_NAME" >> "$GITHUB_ENV"
           echo "Installed app profile: $APP_PROFILE_NAME ($APP_PROFILE_UUID)"
           echo "Installed widget profile: $WIDGET_PROFILE_NAME ($WIDGET_PROFILE_UUID)"
+          echo "Installed watch profile: $WATCH_PROFILE_NAME ($WATCH_PROFILE_UUID)"
 
       - name: Install App Store Connect API key
         env:
@@ -88,11 +97,13 @@ jobs:
           text = path.read_text()
           app_profile = json.dumps(os.environ["APP_PROFILE_NAME"])
           widget_profile = json.dumps(os.environ["WIDGET_PROFILE_NAME"])
+          watch_profile = json.dumps(os.environ["WATCH_PROFILE_NAME"])
 
           app_marker = "        PRODUCT_BUNDLE_IDENTIFIER: com.pandaisland.mintledger\n"
           widget_marker = "        PRODUCT_BUNDLE_IDENTIFIER: com.pandaisland.mintledger.widget\n"
+          watch_marker = "        PRODUCT_BUNDLE_IDENTIFIER: com.pandaisland.mintledger.watchkitapp\n"
 
-          if app_marker not in text or widget_marker not in text:
+          if app_marker not in text or widget_marker not in text or watch_marker not in text:
               raise SystemExit("Could not find MintLedger bundle identifiers in project.yml")
 
           text = text.replace(
@@ -109,6 +120,14 @@ jobs:
               + "        CODE_SIGN_STYLE: Manual\n"
               + "        CODE_SIGN_IDENTITY: Apple Distribution\n"
               + f"        PROVISIONING_PROFILE_SPECIFIER: {widget_profile}\n",
+              1,
+          )
+          text = text.replace(
+              watch_marker,
+              watch_marker
+              + "        CODE_SIGN_STYLE: Manual\n"
+              + "        CODE_SIGN_IDENTITY: Apple Distribution\n"
+              + f"        PROVISIONING_PROFILE_SPECIFIER: {watch_profile}\n",
               1,
           )
           path.write_text(text)
@@ -155,6 +174,8 @@ jobs:
               <string>$APP_PROFILE_NAME</string>
               <key>com.pandaisland.mintledger.widget</key>
               <string>$WIDGET_PROFILE_NAME</string>
+              <key>com.pandaisland.mintledger.watchkitapp</key>
+              <string>$WATCH_PROFILE_NAME</string>
             </dict>
           </dict>
           </plist>

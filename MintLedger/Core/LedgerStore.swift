@@ -78,6 +78,12 @@ final class LedgerStore {
         persist()
     }
 
+    func addTransactionIfNeeded(_ transaction: LedgerTransaction) {
+        guard !snapshot.transactions.contains(where: { $0.id == transaction.id }) else { return }
+        snapshot.transactions.append(transaction)
+        persist()
+    }
+
     func deleteTransactions(ids: Set<UUID>) {
         snapshot.transactions.removeAll { ids.contains($0.id) }
         persist()

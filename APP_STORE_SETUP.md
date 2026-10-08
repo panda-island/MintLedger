@@ -9,7 +9,9 @@
 3. 建立 iCloud Container：`iCloud.com.pandaisland.mintledger`。
 4. 編輯主 App ID，開啟 iCloud，選擇 CloudKit，並指派上述容器。
 5. Widget App ID `com.pandaisland.mintledger.widget` 只需指派同一個 App Group。
-6. 建立 Apple Distribution 憑證並匯出成 `.p12`。舊第三方帳號的憑證與描述檔不能沿用到你的新 Team。
+6. 建立 Watch App ID：`com.pandaisland.mintledger.watchkitapp`，並確認它的 Companion App 是 `com.pandaisland.mintledger`。
+7. 分別建立主 App、Widget 與 Watch App 的 App Store provisioning profile。
+8. 建立 Apple Distribution 憑證並匯出成 `.p12`。舊第三方帳號的憑證與描述檔不能沿用到你的新 Team。
 
 ## App Store Connect
 
@@ -37,6 +39,9 @@ App Store Connect 的自訂 EULA 欄位只接受純文字，不接受 URL。Mint
 - `APP_STORE_CONNECT_KEY_ID`：API Key ID
 - `APP_STORE_CONNECT_ISSUER_ID`：Issuer ID
 - `APP_STORE_CONNECT_PRIVATE_KEY_BASE64`：`.p8` 私鑰的 Base64 內容
+- `APP_PROVISIONING_PROFILE_BASE64`：主 App 的 App Store 描述檔 Base64
+- `WIDGET_PROVISIONING_PROFILE_BASE64`：Widget 的 App Store 描述檔 Base64
+- `WATCH_PROVISIONING_PROFILE_BASE64`：Watch App 的 App Store 描述檔 Base64
 
 所有值只能放在 GitHub Secrets，不能提交到專案。設定完成後，到 Actions 手動執行 `Upload to App Store Connect`。成功上傳後，build 會先出現在 TestFlight；完成測試、隱私問卷、App 截圖與商品審查資料後，再於 App Store Connect 送審。
 

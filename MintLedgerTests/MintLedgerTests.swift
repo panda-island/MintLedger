@@ -28,6 +28,25 @@ final class MintLedgerTests: XCTestCase {
         XCTAssertEqual(try decoder.decode(LedgerSnapshot.self, from: encoder.encode(original)), original)
     }
 
+    func testWatchSyncPayloadRoundTrip() throws {
+        let account = LedgerAccount(name: "手錶測試", symbol: "applewatch")
+        let transaction = LedgerTransaction(
+            kind: .expense,
+            amountMinor: 12_300,
+            category: .food,
+            accountID: account.id,
+            note: "手錶新增",
+            date: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+
+        let decoded = try WatchSyncPayload.decode(
+            LedgerTransaction.self,
+            from: WatchSyncPayload.encode(transaction)
+        )
+
+        XCTAssertEqual(decoded, transaction)
+    }
+
     func testAllCategoriesHavePresentation() {
         for category in LedgerCategory.allCases {
             XCTAssertFalse(category.title.isEmpty)
