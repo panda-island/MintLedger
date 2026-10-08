@@ -45,9 +45,56 @@ jobs:
           printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY_BASE64" | base64 --decode > "$KEY_DIRECTORY/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
           chmod 600 "$KEY_DIRECTORY/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
 
+      - name: Create App Store provisioning profiles
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          API_KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
+          LOCAL_CERTIFICATE_PATH="$RUNNER_TEMP/distribution-certificate.pem"
+          openssl pkcs12 \
+            -in "$RUNNER_TEMP/distribution.p12" \
+            -clcerts \
+            -nokeys \
+            -passin env:P12_PASSWORD \
+            -out "$LOCAL_CERTIFICATE_PATH"
+          python3 -m pip install --quiet PyJWT cryptography
+          APP_STORE_CONNECT_KEY_PATH="$API_KEY_PATH" \
+          LOCAL_DISTRIBUTION_CERTIFICATE_PATH="$LOCAL_CERTIFICATE_PATH" \
+            python3 ci/create_app_store_profiles.py
+
       - name: Generate Xcode project
         shell: bash
-        run: xcodegen generate
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("project.yml")
+          text = path.read_text()
+          profiles = {
+              "com.pandaisland.mintledger": os.environ["APP_PROFILE_NAME"],
+              "com.pandaisland.mintledger.widget": os.environ["WIDGET_PROFILE_NAME"],
+              "com.pandaisland.mintledger.watchkitapp": os.environ["WATCH_PROFILE_NAME"],
+          }
+          for bundle_id, profile_name in profiles.items():
+              marker = f"        PRODUCT_BUNDLE_IDENTIFIER: {bundle_id}\n"
+              if marker not in text:
+                  raise SystemExit(f"Could not find {bundle_id} in project.yml")
+              signing = (
+                  marker
+                  + "        CODE_SIGN_STYLE: Manual\n"
+                  + "        CODE_SIGN_IDENTITY: Apple Distribution\n"
+                  + f"        PROVISIONING_PROFILE_SPECIFIER: {json.dumps(profile_name)}\n"
+              )
+              text = text.replace(marker, signing, 1)
+          path.write_text(text)
+          PY
+          xcodegen generate
 
       - name: Archive signed app
         env:
@@ -56,19 +103,14 @@ jobs:
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         shell: bash
         run: |
-          API_KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
           xcodebuild archive \
             -project MintLedger.xcodeproj \
             -scheme MintLedger \
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/MintLedger.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$API_KEY_PATH" \
-            -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
-            -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            CODE_SIGN_STYLE=Automatic
+            CODE_SIGN_STYLE=Manual
 
       - name: Export App Store IPA
         env:
@@ -87,13 +129,22 @@ jobs:
             <key>method</key>
             <string>app-store-connect</string>
             <key>signingStyle</key>
-            <string>automatic</string>
+            <string>manual</string>
             <key>signingCertificate</key>
             <string>Apple Distribution</string>
             <key>teamID</key>
             <string>$APPLE_TEAM_ID</string>
             <key>manageAppVersionAndBuildNumber</key>
             <false/>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.pandaisland.mintledger</key>
+              <string>$APP_PROFILE_NAME</string>
+              <key>com.pandaisland.mintledger.widget</key>
+              <string>$WIDGET_PROFILE_NAME</string>
+              <key>com.pandaisland.mintledger.watchkitapp</key>
+              <string>$WATCH_PROFILE_NAME</string>
+            </dict>
           </dict>
           </plist>
           EOF
@@ -101,11 +152,7 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath "$RUNNER_TEMP/MintLedger.xcarchive" \
             -exportPath "$RUNNER_TEMP/AppStoreExport" \
-            -exportOptionsPlist "$EXPORT_OPTIONS" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$API_KEY_PATH" \
-            -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
-            -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
+            -exportOptionsPlist "$EXPORT_OPTIONS"
 
       - name: Upload to App Store Connect
         env:
