@@ -35,6 +35,10 @@ targets:
       - target: MintLedgerWidget
         embed: true
       - target: MintLedgerWatch
+        embed: true
+        copy:
+          destination: productsDirectory
+          subpath: "$(CONTENTS_FOLDER_PATH)/Watch"
   MintLedgerWidget:
     type: app-extension
     platform: iOS
@@ -67,6 +71,7 @@ targets:
         INFOPLIST_FILE: MintLedgerWatch/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "4"
+        SKIP_INSTALL: YES
     scheme: {}
   MintLedgerTests:
     type: bundle.unit-test
