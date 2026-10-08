@@ -30,13 +30,15 @@ final class MintLedgerTests: XCTestCase {
 
     func testWatchSyncPayloadRoundTrip() throws {
         let account = LedgerAccount(name: "手錶測試", symbol: "applewatch")
+        let fixedDate = Date(timeIntervalSince1970: 1_700_000_000)
         let transaction = LedgerTransaction(
             kind: .expense,
             amountMinor: 12_300,
             category: .food,
             accountID: account.id,
             note: "手錶新增",
-            date: Date(timeIntervalSince1970: 1_700_000_000)
+            date: fixedDate,
+            createdAt: fixedDate
         )
 
         let decoded = try WatchSyncPayload.decode(
