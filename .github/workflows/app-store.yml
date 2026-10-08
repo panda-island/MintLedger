@@ -61,10 +61,11 @@ jobs:
             -nokeys \
             -passin env:P12_PASSWORD \
             -out "$LOCAL_CERTIFICATE_PATH"
-          python3 -m pip install --quiet PyJWT cryptography
+          python3 -m venv "$RUNNER_TEMP/profile-venv"
+          "$RUNNER_TEMP/profile-venv/bin/pip" install --quiet PyJWT cryptography
           APP_STORE_CONNECT_KEY_PATH="$API_KEY_PATH" \
           LOCAL_DISTRIBUTION_CERTIFICATE_PATH="$LOCAL_CERTIFICATE_PATH" \
-            python3 ci/create_app_store_profiles.py
+            "$RUNNER_TEMP/profile-venv/bin/python" ci/create_app_store_profiles.py
 
       - name: Generate Xcode project
         shell: bash
