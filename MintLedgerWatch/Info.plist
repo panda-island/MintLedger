@@ -24,7 +24,7 @@
     <false/>
     <key>WKCompanionAppBundleIdentifier</key>
     <string>com.pandaisland.mintledger</string>
-    <key>WKWatchKitApp</key>
+    <key>WKApplication</key>
     <true/>
     <key>WKRunsIndependentlyOfCompanionApp</key>
     <false/>
