@@ -55,7 +55,6 @@ jobs:
           -project MintLedger.xcodeproj
           -scheme MintLedger
           -configuration Release
-          -sdk iphoneos
           -destination "generic/platform=iOS"
           -derivedDataPath build/DerivedData
           CODE_SIGNING_ALLOWED=NO
