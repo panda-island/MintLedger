@@ -75,9 +75,10 @@ def matching_certificate_id() -> str:
 
 
 def bundle_id_resource(identifier: str, display_name: str) -> dict:
-    result = api("GET", "/bundleIds", query={"filter[identifier]": identifier, "limit": "1"})["data"]
-    if result:
-        return result[0]
+    result = api("GET", "/bundleIds", query={"filter[identifier]": identifier, "limit": "200"})["data"]
+    exact_match = next((item for item in result if item["attributes"]["identifier"] == identifier), None)
+    if exact_match:
+        return exact_match
     return api(
         "POST",
         "/bundleIds",
