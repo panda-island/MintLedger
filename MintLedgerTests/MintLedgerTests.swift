@@ -3,6 +3,19 @@ import UniformTypeIdentifiers
 @testable import MintLedger
 
 final class MintLedgerTests: XCTestCase {
+    @MainActor
+    func testAppLockRestoresEnabledStateOnLaunch() {
+        let suiteName = "MintLedgerTests.AppLock.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.set(true, forKey: AppLockService.enabledDefaultsKey)
+
+        let appLock = AppLockService(defaults: defaults)
+
+        XCTAssertTrue(appLock.isEnabled)
+        XCTAssertTrue(appLock.isLocked)
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
     func testSignedAmounts() {
         let account = UUID()
         let expense = LedgerTransaction(kind: .expense, amountMinor: 12_500, category: .food, accountID: account, note: "午餐", date: .now)

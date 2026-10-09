@@ -6,6 +6,7 @@ struct MintLedgerApp: App {
     @State private var store = LedgerStore()
     @State private var cloudBackup = ICloudBackupService()
     @State private var watchSync = PhoneWatchSyncService()
+    @State private var appLock = AppLockService()
     @State private var showsLaunchAnimation = true
 
     var body: some Scene {
@@ -13,11 +14,20 @@ struct MintLedgerApp: App {
             RootView()
                 .environment(store)
                 .environment(cloudBackup)
+                .environment(appLock)
                 .overlay {
                     if showsLaunchAnimation {
                         LaunchAnimationView()
                             .transition(.opacity.combined(with: .scale(scale: 1.03)))
                             .allowsHitTesting(false)
+                    }
+                }
+                .overlay {
+                    if appLock.isEnabled,
+                       appLock.isLocked || scenePhase != .active,
+                       !showsLaunchAnimation {
+                        AppLockView()
+                            .transition(.opacity)
                     }
                 }
                 .task {
@@ -33,6 +43,9 @@ struct MintLedgerApp: App {
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.88)) {
                         showsLaunchAnimation = false
                     }
+                    if !isRunningTests {
+                        await appLock.prepare()
+                    }
                 }
                 .onOpenURL { url in
                     store.reload()
@@ -41,6 +54,10 @@ struct MintLedgerApp: App {
                     scheduleCloudBackup()
                 }
                 .onChange(of: scenePhase) { _, phase in
+                    if phase == .background {
+                        appLock.lock()
+                        return
+                    }
                     guard phase == .active else { return }
                     store.reload()
                     store.runDueRecurringEntries()
@@ -48,6 +65,7 @@ struct MintLedgerApp: App {
                     guard !isRunningTests else { return }
                     watchSync.sendSnapshot()
                     Task {
+                        await appLock.unlockIfNeeded()
                         await cloudBackup.refreshAccountStatus()
                         scheduleCloudBackup()
                     }

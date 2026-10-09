@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @Environment(LedgerStore.self) private var store
     @Environment(ICloudBackupService.self) private var cloudBackup
+    @Environment(AppLockService.self) private var appLock
     @Environment(\.openURL) private var openURL
     @State private var exportDocument = BackupDocument()
     @State private var csvDocument = CSVDocument(data: Data())
@@ -16,6 +17,7 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            securitySection
             privacySection
             cloudBackupSection
             Section("本機備份") {
@@ -61,6 +63,7 @@ struct SettingsView: View {
         }
         .navigationTitle("設定")
         .task {
+            appLock.refreshAvailability()
             await cloudBackup.prepare()
         }
         .fileExporter(isPresented: $exportingBackup, document: exportDocument, contentType: .mintLedgerBackup, defaultFilename: "MintLedger-Backup") { result in report(result, success: "備份已匯出") }
@@ -69,6 +72,36 @@ struct SettingsView: View {
         .alert("MintLedger", isPresented: Binding(get: { statusMessage != nil }, set: { if !$0 { statusMessage = nil } })) {
             Button("好") { statusMessage = nil }
         } message: { Text(statusMessage ?? "") }
+    }
+
+    private var securitySection: some View {
+        Section("安全性") {
+            Toggle("開啟 App 時使用 Face ID", isOn: Binding(
+                get: { appLock.isEnabled },
+                set: { enabled in
+                    Task { await appLock.setEnabled(enabled) }
+                }
+            ))
+            .disabled(appLock.isAuthenticating || (!appLock.isEnabled && !appLock.isFaceIDAvailable))
+
+            if appLock.isAuthenticating {
+                HStack {
+                    ProgressView()
+                    Text("正在驗證 Face ID…")
+                        .foregroundStyle(.secondary)
+                }
+            } else if let message = appLock.statusMessage {
+                Label(message, systemImage: "exclamationmark.triangle.fill")
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+            } else {
+                Text(appLock.isFaceIDAvailable
+                     ? "啟用後，每次重新開啟 App 或從背景返回時都會要求 Face ID。"
+                     : "此裝置目前沒有可用的 Face ID。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     private var privacySection: some View {
