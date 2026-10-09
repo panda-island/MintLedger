@@ -27,6 +27,7 @@ struct MintLedgerApp: App {
                     // system sheet. Removing the view hierarchy in the same update as a
                     // successful Face ID callback can race the sheet dismissal on device.
                     AppLockView()
+                        .environment(appLock)
                         .opacity(isAppLockPresented ? 1 : 0)
                         .allowsHitTesting(isAppLockPresented)
                         .accessibilityHidden(!isAppLockPresented)
