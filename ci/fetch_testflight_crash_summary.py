@@ -79,7 +79,7 @@ def main() -> None:
     for submission in submissions["data"]:
         relationship = submission.get("relationships", {}).get("build", {}).get("data")
         build_number = builds.get(relationship["id"]) if relationship else None
-        if build_number not in {"22", "23"}:
+        if build_number not in {"22", "23", "24"}:
             continue
         found = True
         created = submission.get("attributes", {}).get("createdDate", "unknown")
@@ -93,7 +93,7 @@ def main() -> None:
         print("\n".join(lines) if lines else "Crash log contained no matching diagnostic lines")
 
     if not found:
-        print("No TestFlight crash feedback was available yet for builds 22 or 23.")
+        print("No TestFlight crash feedback was available yet for builds 22, 23, or 24.")
 
 
 if __name__ == "__main__":

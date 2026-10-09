@@ -23,11 +23,13 @@ struct MintLedgerApp: App {
                     }
                 }
                 .overlay {
-                    if appLock.isEnabled,
-                       appLock.isLocked || scenePhase != .active,
-                       !showsLaunchAnimation {
-                        AppLockView()
-                    }
+                    // Keep the lock view mounted while LocalAuthentication dismisses its
+                    // system sheet. Removing the view hierarchy in the same update as a
+                    // successful Face ID callback can race the sheet dismissal on device.
+                    AppLockView()
+                        .opacity(isAppLockPresented ? 1 : 0)
+                        .allowsHitTesting(isAppLockPresented)
+                        .accessibilityHidden(!isAppLockPresented)
                 }
                 .task {
                     store.reload()
@@ -81,6 +83,12 @@ struct MintLedgerApp: App {
         guard !isRunningTests else { return }
         guard let data = try? store.encodedBackup() else { return }
         cloudBackup.scheduleAutomaticBackup(data: data)
+    }
+
+    private var isAppLockPresented: Bool {
+        appLock.isEnabled
+            && (appLock.isLocked || scenePhase != .active)
+            && !showsLaunchAnimation
     }
 
     private var isRunningTests: Bool {
