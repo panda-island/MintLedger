@@ -16,6 +16,21 @@ final class MintLedgerTests: XCTestCase {
         defaults.removePersistentDomain(forName: suiteName)
     }
 
+    @MainActor
+    func testDisablingAppLockClearsPersistedSettingAndUnlocks() async {
+        let suiteName = "MintLedgerTests.AppLock.Disable.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.set(true, forKey: AppLockService.enabledDefaultsKey)
+        let appLock = AppLockService(defaults: defaults)
+
+        await appLock.setEnabled(false)
+
+        XCTAssertFalse(appLock.isEnabled)
+        XCTAssertFalse(appLock.isLocked)
+        XCTAssertFalse(defaults.bool(forKey: AppLockService.enabledDefaultsKey))
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
     func testSignedAmounts() {
         let account = UUID()
         let expense = LedgerTransaction(kind: .expense, amountMinor: 12_500, category: .food, accountID: account, note: "午餐", date: .now)

@@ -27,7 +27,6 @@ struct MintLedgerApp: App {
                        appLock.isLocked || scenePhase != .active,
                        !showsLaunchAnimation {
                         AppLockView()
-                            .transition(.opacity)
                     }
                 }
                 .task {
@@ -44,7 +43,8 @@ struct MintLedgerApp: App {
                         showsLaunchAnimation = false
                     }
                     if !isRunningTests {
-                        await appLock.prepare()
+                        appLock.prepare()
+                        await appLock.unlockIfNeeded()
                     }
                 }
                 .onOpenURL { url in

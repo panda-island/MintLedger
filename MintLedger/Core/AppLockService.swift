@@ -23,9 +23,8 @@ final class AppLockService {
         isLocked = enabled
     }
 
-    func prepare() async {
+    func prepare() {
         refreshAvailability()
-        await unlockIfNeeded()
     }
 
     func setEnabled(_ enabled: Bool) async {
@@ -73,9 +72,9 @@ final class AppLockService {
 
     @discardableResult
     private func authenticate(reason: String) async -> Bool {
+        guard !isAuthenticating else { return false }
         isAuthenticating = true
         statusMessage = nil
-        defer { isAuthenticating = false }
 
         let context = LAContext()
         context.localizedCancelTitle = "取消"
@@ -86,28 +85,25 @@ final class AppLockService {
               context.biometryType == .faceID else {
             isFaceIDAvailable = false
             statusMessage = "Face ID 無法使用，請檢查 iPhone 的 Face ID 與密碼設定。"
+            isAuthenticating = false
             return false
         }
 
-        let result: Result<Bool, Error> = await withCheckedContinuation { continuation in
-            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, error in
-                if let error {
-                    continuation.resume(returning: .failure(error))
-                } else {
-                    continuation.resume(returning: .success(success))
-                }
+        do {
+            let succeeded = try await context.evaluatePolicy(
+                .deviceOwnerAuthenticationWithBiometrics,
+                localizedReason: reason
+            )
+            isAuthenticating = false
+            guard succeeded else {
+                statusMessage = "Face ID 驗證失敗，請再試一次。"
+                return false
             }
-        }
-
-        switch result {
-        case .success(true):
-            isLocked = false
             statusMessage = nil
+            isLocked = false
             return true
-        case .success(false):
-            statusMessage = "Face ID 驗證失敗，請再試一次。"
-            return false
-        case .failure(let error):
+        } catch {
+            isAuthenticating = false
             statusMessage = message(for: error)
             return false
         }
