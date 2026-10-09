@@ -23,11 +23,13 @@ final class PhoneWatchSyncService: NSObject, WCSessionDelegate {
 
     func sendSnapshot() {
         guard let session, session.activationState == .activated,
-              session.isWatchAppInstalled,
               let snapshot = store?.snapshot,
               let data = try? WatchSyncPayload.encode(snapshot) else { return }
 
         try? session.updateApplicationContext([WatchSyncPayload.snapshotKey: data])
+        if session.isReachable {
+            session.sendMessage([WatchSyncPayload.snapshotKey: data], replyHandler: nil, errorHandler: nil)
+        }
     }
 
     nonisolated func session(
@@ -58,6 +60,15 @@ final class PhoneWatchSyncService: NSObject, WCSessionDelegate {
         from payload: [String: Any],
         replyHandler: (([String: Any]) -> Void)?
     ) {
+        if payload[WatchSyncPayload.snapshotRequestKey] as? Bool == true {
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                sendSnapshot()
+                replyHandler?(snapshotReply())
+            }
+            return
+        }
+
         guard let data = payload[WatchSyncPayload.transactionKey] as? Data,
               let transaction = try? WatchSyncPayload.decode(LedgerTransaction.self, from: data) else {
             replyHandler?(["accepted": false])
@@ -65,10 +76,26 @@ final class PhoneWatchSyncService: NSObject, WCSessionDelegate {
         }
 
         Task { @MainActor [weak self] in
-            self?.store?.addTransactionIfNeeded(transaction)
-            self?.sendSnapshot()
-            replyHandler?(["accepted": true])
+            guard let self else { return }
+            store?.addTransactionIfNeeded(transaction)
+            sendSnapshot()
+            replyHandler?(snapshotReply(accepted: true))
         }
+    }
+
+    private func snapshotReply(accepted: Bool? = nil) -> [String: Any] {
+        var reply: [String: Any] = [:]
+        if let accepted { reply["accepted"] = accepted }
+        if let snapshot = store?.snapshot,
+           let data = try? WatchSyncPayload.encode(snapshot) {
+            reply[WatchSyncPayload.snapshotKey] = data
+        }
+        return reply
+    }
+
+    nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+        guard session.isReachable else { return }
+        Task { @MainActor [weak self] in self?.sendSnapshot() }
     }
 
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}

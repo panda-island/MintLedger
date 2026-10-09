@@ -3,6 +3,7 @@ import Foundation
 enum WatchSyncPayload {
     static let snapshotKey = "snapshot"
     static let transactionKey = "transaction"
+    static let snapshotRequestKey = "requestSnapshot"
 
     static func encode<T: Encodable>(_ value: T) throws -> Data {
         let encoder = JSONEncoder()

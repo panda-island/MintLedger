@@ -71,8 +71,25 @@ final class WatchLedgerStore: NSObject, WCSessionDelegate {
 
         let payload: [String: Any] = [WatchSyncPayload.transactionKey: data]
         if session.isReachable {
-            session.sendMessage(payload) { _ in
-                Task { @MainActor [weak self] in self?.lastError = nil }
+            session.sendMessage(payload) { [weak self] reply in
+                Task { @MainActor in
+                    self?.apply(snapshotFrom: reply)
+                    self?.lastError = nil
+                }
+            } errorHandler: { [weak session] _ in
+                session?.transferUserInfo(payload)
+            }
+        } else {
+            session.transferUserInfo(payload)
+        }
+    }
+
+    private func requestSnapshot() {
+        guard let session, session.activationState == .activated else { return }
+        let payload: [String: Any] = [WatchSyncPayload.snapshotRequestKey: true]
+        if session.isReachable {
+            session.sendMessage(payload) { [weak self] reply in
+                Task { @MainActor in self?.apply(snapshotFrom: reply) }
             } errorHandler: { [weak session] _ in
                 session?.transferUserInfo(payload)
             }
@@ -105,7 +122,10 @@ final class WatchLedgerStore: NSObject, WCSessionDelegate {
             return
         }
         let context = session.receivedApplicationContext
-        Task { @MainActor [weak self] in self?.apply(snapshotFrom: context) }
+        Task { @MainActor [weak self] in
+            self?.apply(snapshotFrom: context)
+            self?.requestSnapshot()
+        }
     }
 
     nonisolated func session(
@@ -113,5 +133,18 @@ final class WatchLedgerStore: NSObject, WCSessionDelegate {
         didReceiveApplicationContext applicationContext: [String: Any]
     ) {
         Task { @MainActor [weak self] in self?.apply(snapshotFrom: applicationContext) }
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        Task { @MainActor [weak self] in self?.apply(snapshotFrom: message) }
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
+        Task { @MainActor [weak self] in self?.apply(snapshotFrom: userInfo) }
+    }
+
+    nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+        guard session.isReachable else { return }
+        Task { @MainActor [weak self] in self?.requestSnapshot() }
     }
 }

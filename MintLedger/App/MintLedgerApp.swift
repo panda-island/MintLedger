@@ -37,6 +37,7 @@ struct MintLedgerApp: App {
                 .onOpenURL { url in
                     store.reload()
                     SharedLedgerStorage.refreshWidget()
+                    watchSync.sendSnapshot()
                     scheduleCloudBackup()
                 }
                 .onChange(of: scenePhase) { _, phase in
@@ -45,6 +46,7 @@ struct MintLedgerApp: App {
                     store.runDueRecurringEntries()
                     SharedLedgerStorage.refreshWidget()
                     guard !isRunningTests else { return }
+                    watchSync.sendSnapshot()
                     Task {
                         await cloudBackup.refreshAccountStatus()
                         scheduleCloudBackup()
