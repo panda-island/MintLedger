@@ -18,6 +18,12 @@ struct WatchDashboardView: View {
                         .foregroundStyle(.mint)
                 }
 
+                NavigationLink {
+                    WatchSettingsView()
+                } label: {
+                    Label("設定", systemImage: "gearshape")
+                }
+
                 Section("近期明細") {
                     if store.recentTransactions.isEmpty {
                         Text("尚無帳目")

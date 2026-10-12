@@ -15,6 +15,7 @@ MintLedger 是一款離線優先、以繁體中文設計的 iPhone 與 Apple Wat
 - App Intent、Siri 與捷徑直接記帳；`alwaysAllowed` 支援裝置鎖定時執行，App 會即時同步新資料
 - 4×2 桌面小工具顯示總資產與近期明細，2×1 鎖定畫面小工具顯示總資產
 - Apple Watch 可查看總資產與近期明細，並快速新增收入或支出；透過 WatchConnectivity 與 iPhone 雙向同步
+- Apple Watch「設定」可啟用 4 位數密碼鎖、改密碼、關閉或立即鎖定；背景返回時重新驗證，連續輸錯 5 次需等 60 秒。密碼僅存於手錶 Keychain，不會同步或備份
 - iOS 26 原生 Liquid Glass，iOS 17–25 使用原生材質退路
 - 原創 1024×1024 App Icon
 

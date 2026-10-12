@@ -11,8 +11,8 @@ settings:
     SWIFT_VERSION: "5.0"
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
-    CURRENT_PROJECT_VERSION: 24
-    MARKETING_VERSION: 1.7.4
+    CURRENT_PROJECT_VERSION: 25
+    MARKETING_VERSION: 1.8.0
     ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
 targets:
   MintLedger:
@@ -63,6 +63,7 @@ targets:
       - path: MintLedgerWatch
       - path: MintLedger/Core/Models.swift
       - path: MintLedger/Core/WatchSyncProtocol.swift
+      - path: MintLedger/Core/WatchPasscodeLockService.swift
       - path: MintLedger/Resources
         buildPhase: resources
     settings:
