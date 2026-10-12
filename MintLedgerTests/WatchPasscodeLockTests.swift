@@ -98,6 +98,13 @@ final class WatchPasscodeLockTests: XCTestCase {
         XCTAssertFalse(earlyLaunch.isEnabled)
         XCTAssertFalse(earlyLaunch.isLocked)
     }
+
+    func testMigratedPreferencesWithoutDeviceOnlyCredentialDoNotLockOutNewWatch() {
+        defaults.set(true, forKey: WatchPasscodeLockService.enabledKey)
+        let newWatch = WatchPasscodeLockService(storage: storage, defaults: defaults)
+        XCTAssertFalse(newWatch.isEnabled)
+        XCTAssertFalse(newWatch.isLocked)
+    }
 }
 
 private final class MemoryPasscodeStorage: WatchPasscodeStorage {

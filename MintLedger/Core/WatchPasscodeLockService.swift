@@ -95,7 +95,7 @@ final class WatchPasscodeLockService {
         // Any Keychain error fails closed instead of revealing cached accounts.
         let enabled: Bool
         do {
-            enabled = try storage.read() != nil || defaults.bool(forKey: Self.enabledKey)
+            enabled = try storage.read() != nil
         } catch {
             enabled = true
         }
@@ -126,7 +126,7 @@ final class WatchPasscodeLockService {
         // Background launches can occur before the system Keychain is accessible.
         // Retry once active, while retaining protection on storage errors.
         do {
-            let enabled = try storage.read() != nil || defaults.bool(forKey: Self.enabledKey)
+            let enabled = try storage.read() != nil
             if enabled && !isEnabled { isLocked = true }
             if !enabled { isLocked = false }
             isEnabled = enabled
