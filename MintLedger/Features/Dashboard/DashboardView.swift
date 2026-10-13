@@ -31,6 +31,7 @@ struct DashboardView: View {
             VStack(spacing: 16) {
                 BalanceHero(balance: store.balanceMinor, currency: store.snapshot.currencyCode)
                 monthCards
+                NetWorthTrendCard(snapshot: store.snapshot)
                 expenseChart
                 recentSection
             }
