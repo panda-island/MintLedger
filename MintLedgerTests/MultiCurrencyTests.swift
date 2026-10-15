@@ -139,6 +139,20 @@ final class MultiCurrencyTests: XCTestCase {
     }
 
     @MainActor
+    func testUnchangedTransactionUsesSavedCalendarDayInsteadOfDeviceTimeZone() async throws {
+        // The saved day can differ from today's local rendering of its UTC timestamp.
+        let day = "2025-10-13"
+        let booking = try ExchangeRateService.booking(amount: 10, from: "USD", to: "TWD", day: day, rate: value("31.57"), rateDate: day, source: "Frankfurter 每日參考匯率")
+        let transaction = LedgerTransaction(kind: .expense, amountMinor: booking.amountMinor, category: .food, accountID: UUID(), note: "", date: date, createdAt: date, conversion: booking.conversion)
+        let draft = CurrencyEntryModel(transaction: transaction)
+        draft.prepare(base: "TWD")
+        await draft.loadRate(base: "TWD")
+        XCTAssertNil(draft.error)
+        XCTAssertEqual(draft.rateDate, day)
+        XCTAssertEqual(try draft.booking(base: "TWD").conversion, booking.conversion)
+    }
+
+    @MainActor
     func testArithmeticInputDoesNotCreateBinaryFloatingPointRoundingErrors() async throws {
         let draft = CurrencyEntryModel()
         draft.prepare(base: "USD")

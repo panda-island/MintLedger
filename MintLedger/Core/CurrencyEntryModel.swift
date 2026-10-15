@@ -41,7 +41,12 @@ final class CurrencyEntryModel {
     }
 
     func requestKey(base: String) -> String {
-        "\(currencyCode)|\(base)|\(CurrencyMath.day(date))|\(manualRate)"
+        "\(currencyCode)|\(base)|\(transactionDay)|\(manualRate)"
+    }
+
+    private var transactionDay: String {
+        if let original, original.date == date, let saved = original.conversion { return saved.requestedDate }
+        return CurrencyMath.day(date)
     }
 
     func loadRate(base: String) async {
@@ -52,19 +57,19 @@ final class CurrencyEntryModel {
         loadedKey = nil
         if currencyCode == base {
             rateText = "1"
-            rateDate = CurrencyMath.day(date)
+            rateDate = transactionDay
             rateSource = "相同幣別"
             loadedKey = key
             return
         }
         if manualRate {
-            rateDate = CurrencyMath.day(date)
+            rateDate = transactionDay
             rateSource = "自訂匯率"
             loadedKey = key
             return
         }
         if let saved = original?.conversion, saved.originalCurrencyCode == currencyCode,
-           saved.baseCurrencyCode == base, saved.requestedDate == CurrencyMath.day(date) {
+           saved.baseCurrencyCode == base, saved.requestedDate == transactionDay {
             rateText = saved.rate
             rateDate = saved.rateDate
             rateSource = saved.rateSource
@@ -74,7 +79,7 @@ final class CurrencyEntryModel {
         isLoading = true
         defer { if requestKey(base: base) == key { isLoading = false } }
         do {
-            let result = try await ExchangeRateService.shared.quote(from: currencyCode, to: base, day: CurrencyMath.day(date))
+            let result = try await ExchangeRateService.shared.quote(from: currencyCode, to: base, day: transactionDay)
             guard !Task.isCancelled, requestKey(base: base) == key else { return }
             rateText = CurrencyMath.string(result.rate)
             rateDate = result.date
@@ -105,8 +110,8 @@ final class CurrencyEntryModel {
             return CurrencyBooking(amountMinor: original.amountMinor, conversion: original.conversion ?? CurrencyRebaser.legacyConversion(original, code: base))
         }
         return try ExchangeRateService.booking(amount: originalAmount, from: currencyCode, to: base,
-                                              day: CurrencyMath.day(date), rate: rate,
-                                              rateDate: rateDate.isEmpty ? CurrencyMath.day(date) : rateDate,
+                                              day: transactionDay, rate: rate,
+                                              rateDate: rateDate.isEmpty ? transactionDay : rateDate,
                                               source: currencyCode == base ? "相同幣別" : manualRate ? "自訂匯率" : rateSource)
     }
 }
