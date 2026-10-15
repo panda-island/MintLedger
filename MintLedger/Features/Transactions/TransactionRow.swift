@@ -15,6 +15,10 @@ struct TransactionRow: View {
                 Text(transaction.note.isEmpty ? transaction.category.title : transaction.note).font(.body.weight(.medium)).lineLimit(1)
                 Text("\(transaction.category.title) · \(transaction.date.ledgerDateTimeText)")
                     .font(.caption).foregroundStyle(.secondary)
+                if let conversion = transaction.conversion, conversion.originalCurrencyCode != store.snapshot.currencyCode {
+                    Text("原幣 \(conversion.originalCurrencyCode) \(conversion.originalAmount)")
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
             }
             Spacer()
             AmountText(amountMinor: transaction.amountMinor, currencyCode: store.snapshot.currencyCode, kind: transaction.kind)

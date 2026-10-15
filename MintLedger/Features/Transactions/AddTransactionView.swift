@@ -4,31 +4,27 @@ struct AddTransactionView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(LedgerStore.self) private var store
     @State private var kind: TransactionKind = .expense
-    @State private var amountText = ""
+    @State private var money = CurrencyEntryModel()
     @State private var category: LedgerCategory = .food
     @State private var accountID: UUID?
     @State private var note = ""
-    @State private var date = Date()
     @FocusState private var amountFocused: Bool
 
-    private var amountMinor: Int64? {
-        guard let value = AmountExpression.evaluate(amountText) else { return nil }
-        return Int64((value * 100).rounded())
-    }
-
     var body: some View {
+        @Bindable var money = money
         Form {
             Section {
                 Picker("類型", selection: $kind) {
                     ForEach(TransactionKind.allCases) { Text($0.title).tag($0) }
                 }.pickerStyle(.segmented)
                 HStack(alignment: .firstTextBaseline) {
-                    Text(currencySymbol).font(.title2).foregroundStyle(.secondary)
-                    TextField("0", text: $amountText)
+                    Text(money.currencyCode).font(.headline).foregroundStyle(.secondary)
+                    TextField("0", text: $money.amountText)
                         .font(.system(size: 42, weight: .bold, design: .rounded))
                         .keyboardType(.decimalPad).focused($amountFocused)
                         .accessibilityLabel("金額")
                 }.padding(.vertical, 8)
+                CurrencyConversionFields(draft: money, baseCode: store.snapshot.currencyCode)
             }
             Section("分類") {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 14) {
@@ -50,7 +46,7 @@ struct AddTransactionView: View {
                 Picker("帳戶", selection: Binding(get: { accountID ?? store.snapshot.accounts.first?.id }, set: { accountID = $0 })) {
                     ForEach(store.snapshot.accounts) { Label($0.name, systemImage: $0.symbol).tag(Optional($0.id)) }
                 }
-                DatePicker("日期", selection: $date, displayedComponents: [.date, .hourAndMinute])
+                DatePicker("日期", selection: $money.date, displayedComponents: [.date, .hourAndMinute])
                     .environment(\.locale, Locale(identifier: "zh_TW"))
                     .environment(\.calendar, Calendar(identifier: .gregorian))
                 TextField("備註（選填）", text: $note)
@@ -58,30 +54,27 @@ struct AddTransactionView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if amountFocused {
-                AmountKeyboardAccessory(expression: $amountText, finishCalculation: finishCalculation)
+                AmountKeyboardAccessory(expression: $money.amountText, finishCalculation: finishCalculation)
             }
         }
         .navigationTitle(kind == .expense ? "新增支出" : "新增收入")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
-            ToolbarItem(placement: .confirmationAction) { Button("儲存") { save() }.disabled(amountMinor == nil || store.snapshot.accounts.isEmpty) }
+            ToolbarItem(placement: .confirmationAction) { Button("儲存") { save() }.disabled((try? money.booking(base: store.snapshot.currencyCode)) == nil || store.snapshot.accounts.isEmpty) }
         }
-        .onAppear { accountID = accountID ?? store.snapshot.accounts.first?.id; amountFocused = true }
-    }
-
-    private var currencySymbol: String {
-        Locale.current.localizedString(forCurrencyCode: store.snapshot.currencyCode) == nil ? store.snapshot.currencyCode : (Locale.current.currencySymbol ?? "$")
+        .onAppear { money.prepare(base: store.snapshot.currencyCode); accountID = accountID ?? store.snapshot.accounts.first?.id; amountFocused = true }
+        .task(id: money.requestKey(base: store.snapshot.currencyCode)) { await money.loadRate(base: store.snapshot.currencyCode) }
     }
 
     private func save() {
-        guard let amountMinor, let accountID else { return }
-        store.addTransaction(kind: kind, amountMinor: amountMinor, category: category, accountID: accountID, note: note, date: date)
-        dismiss()
+        guard let booking = try? money.booking(base: store.snapshot.currencyCode), let accountID else { return }
+        store.addTransaction(kind: kind, amountMinor: booking.amountMinor, category: category, accountID: accountID, note: note, date: money.date, conversion: booking.conversion)
+        if let error = store.lastError { money.error = error } else { dismiss() }
     }
 
     private func finishCalculation() {
-        if let value = AmountExpression.evaluate(amountText) { amountText = AmountExpression.formatted(value) }
+        if let value = AmountExpression.evaluate(money.amountText) { money.amountText = CurrencyMath.string(CurrencyMath.decimal(String(value)) ?? 0) }
         amountFocused = false
     }
 }

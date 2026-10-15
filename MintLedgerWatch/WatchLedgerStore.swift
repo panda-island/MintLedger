@@ -10,7 +10,9 @@ final class WatchLedgerStore: NSObject, WCSessionDelegate {
     private(set) var lastError: String?
 
     @ObservationIgnored private var session: WCSession?
+    private(set) var pendingTransactions: [LedgerTransaction] = []
     private static let cacheKey = "MintLedger.watch.snapshot"
+    private static let pendingKey = "MintLedger.watch.pending-transactions"
 
     override init() {
         if let data = UserDefaults.standard.data(forKey: Self.cacheKey),
@@ -19,13 +21,15 @@ final class WatchLedgerStore: NSObject, WCSessionDelegate {
         } else {
             snapshot = .empty
         }
+        if let data = UserDefaults.standard.data(forKey: Self.pendingKey),
+           let pending = try? WatchSyncPayload.decode([LedgerTransaction].self, from: data) { pendingTransactions = pending }
         super.init()
         activateSession()
     }
 
     var balanceMinor: Int64 {
         snapshot.accounts.reduce(0) { $0 + $1.openingBalanceMinor }
-            + snapshot.transactions.reduce(0) { $0 + $1.signedAmountMinor }
+            + snapshot.transactions.filter { $0.conversion == nil || $0.conversion?.baseCurrencyCode == snapshot.currencyCode }.reduce(0) { $0 + $1.signedAmountMinor }
     }
 
     var recentTransactions: [LedgerTransaction] {
@@ -37,17 +41,22 @@ final class WatchLedgerStore: NSObject, WCSessionDelegate {
         amountMinor: Int64,
         category: LedgerCategory,
         accountID: UUID,
-        note: String
+        note: String,
+        date: Date,
+        conversion: CurrencyConversion
     ) {
+        guard conversion.baseCurrencyCode == snapshot.currencyCode else { lastError = CurrencyError.currencyChanged.localizedDescription; return }
         let transaction = LedgerTransaction(
             kind: kind,
             amountMinor: amountMinor,
             category: category,
             accountID: accountID,
             note: note.trimmingCharacters(in: .whitespacesAndNewlines),
-            date: .now
+            date: date,
+            conversion: conversion
         )
         snapshot.transactions.append(transaction)
+        pendingTransactions.append(transaction)
         snapshot.updatedAt = .now
         saveCache()
         send(transaction)
@@ -74,7 +83,7 @@ final class WatchLedgerStore: NSObject, WCSessionDelegate {
             session.sendMessage(payload) { [weak self] reply in
                 Task { @MainActor in
                     self?.apply(snapshotFrom: reply)
-                    self?.lastError = nil
+                    self?.lastError = reply["accepted"] as? Bool == false ? (reply["error"] as? String ?? "同步未完成，稍後會重試") : nil
                 }
             } errorHandler: { [weak session] _ in
                 session?.transferUserInfo(payload)
@@ -98,10 +107,19 @@ final class WatchLedgerStore: NSObject, WCSessionDelegate {
         }
     }
 
+    func retrySync() {
+        requestSnapshot()
+        pendingTransactions.forEach { send($0) }
+    }
+
     private func apply(snapshotFrom payload: [String: Any]) {
         guard let data = payload[WatchSyncPayload.snapshotKey] as? Data,
               let received = try? WatchSyncPayload.decode(LedgerSnapshot.self, from: data) else { return }
         snapshot = received
+        let receivedIDs = Set(received.transactions.map(\.id))
+        pendingTransactions.removeAll { receivedIDs.contains($0.id) }
+        // Keep unsent entries across incoming snapshots and base-currency changes.
+        snapshot.transactions.append(contentsOf: pendingTransactions)
         lastSyncDate = .now
         lastError = nil
         saveCache()
@@ -110,6 +128,7 @@ final class WatchLedgerStore: NSObject, WCSessionDelegate {
     private func saveCache() {
         guard let data = try? WatchSyncPayload.encode(snapshot) else { return }
         UserDefaults.standard.set(data, forKey: Self.cacheKey)
+        if let pending = try? WatchSyncPayload.encode(pendingTransactions) { UserDefaults.standard.set(pending, forKey: Self.pendingKey) }
     }
 
     nonisolated func session(
@@ -125,6 +144,7 @@ final class WatchLedgerStore: NSObject, WCSessionDelegate {
         Task { @MainActor [weak self] in
             self?.apply(snapshotFrom: context)
             self?.requestSnapshot()
+            self?.pendingTransactions.forEach { self?.send($0) }
         }
     }
 
@@ -145,6 +165,9 @@ final class WatchLedgerStore: NSObject, WCSessionDelegate {
 
     nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
         guard session.isReachable else { return }
-        Task { @MainActor [weak self] in self?.requestSnapshot() }
+        Task { @MainActor [weak self] in
+            self?.requestSnapshot()
+            self?.pendingTransactions.forEach { self?.send($0) }
+        }
     }
 }

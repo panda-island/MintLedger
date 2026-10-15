@@ -6,29 +6,23 @@ struct TransactionEditorView: View {
     private let original: LedgerTransaction
 
     @State private var kind: TransactionKind
-    @State private var amountText: String
+    @State private var money: CurrencyEntryModel
     @State private var category: LedgerCategory
     @State private var accountID: UUID
     @State private var note: String
-    @State private var date: Date
     @FocusState private var amountFocused: Bool
 
     init(transaction: LedgerTransaction) {
         original = transaction
         _kind = State(initialValue: transaction.kind)
-        _amountText = State(initialValue: AmountExpression.formatted(Double(transaction.amountMinor) / 100))
+        _money = State(initialValue: CurrencyEntryModel(transaction: transaction))
         _category = State(initialValue: transaction.category)
         _accountID = State(initialValue: transaction.accountID)
         _note = State(initialValue: transaction.note)
-        _date = State(initialValue: transaction.date)
-    }
-
-    private var amountMinor: Int64? {
-        guard let value = AmountExpression.evaluate(amountText), value > 0 else { return nil }
-        return Int64((value * 100).rounded())
     }
 
     var body: some View {
+        @Bindable var money = money
         Form {
             Section {
                 Picker("類型", selection: $kind) {
@@ -36,13 +30,14 @@ struct TransactionEditorView: View {
                 }
                 .pickerStyle(.segmented)
                 HStack(alignment: .firstTextBaseline) {
-                    Text(store.snapshot.currencyCode).font(.headline).foregroundStyle(.secondary)
-                    TextField("0", text: $amountText)
+                    Text(money.currencyCode).font(.headline).foregroundStyle(.secondary)
+                    TextField("0", text: $money.amountText)
                         .font(.system(size: 38, weight: .bold, design: .rounded))
                         .keyboardType(.decimalPad)
                         .focused($amountFocused)
                 }
                 .padding(.vertical, 8)
+                CurrencyConversionFields(draft: money, baseCode: store.snapshot.currencyCode)
             }
 
             Section("分類") {
@@ -55,12 +50,19 @@ struct TransactionEditorView: View {
                 Picker("帳戶", selection: $accountID) {
                     ForEach(store.snapshot.accounts) { Label($0.name, systemImage: $0.symbol).tag($0.id) }
                 }
-                DatePicker("日期", selection: $date)
+                DatePicker("日期", selection: $money.date)
+                    .environment(\.locale, Locale(identifier: "zh_TW"))
                 TextField("備註（選填）", text: $note)
             }
 
             Section("記錄資訊") {
                 LabeledContent("建立時間", value: original.createdAt.ledgerDateTimeText)
+                if let conversion = original.conversion {
+                    LabeledContent("原始金額", value: "\(conversion.originalCurrencyCode) \(conversion.originalAmount)")
+                    LabeledContent("原入帳幣別", value: conversion.booked.currencyCode)
+                    LabeledContent("原入帳金額", value: conversion.booked.amountMinor.currency(code: conversion.booked.currencyCode))
+                    LabeledContent("原入帳匯率", value: conversion.bookingRate ?? conversion.rate)
+                }
                 LabeledContent("識別碼", value: original.id.uuidString)
                     .font(.caption)
                     .textSelection(.enabled)
@@ -68,32 +70,35 @@ struct TransactionEditorView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if amountFocused {
-                AmountKeyboardAccessory(expression: $amountText, finishCalculation: finishCalculation)
+                AmountKeyboardAccessory(expression: $money.amountText, finishCalculation: finishCalculation)
             }
         }
         .navigationTitle("編輯明細")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
-            ToolbarItem(placement: .confirmationAction) { Button("儲存") { save() }.disabled(amountMinor == nil) }
+            ToolbarItem(placement: .confirmationAction) { Button("儲存") { save() }.disabled((try? money.booking(base: store.snapshot.currencyCode)) == nil) }
         }
+        .onAppear { money.prepare(base: store.snapshot.currencyCode) }
+        .task(id: money.requestKey(base: store.snapshot.currencyCode)) { await money.loadRate(base: store.snapshot.currencyCode) }
     }
 
     private func save() {
-        guard let amountMinor else { return }
+        guard let booking = try? money.booking(base: store.snapshot.currencyCode) else { return }
         var updated = original
         updated.kind = kind
-        updated.amountMinor = amountMinor
+        updated.amountMinor = booking.amountMinor
+        updated.conversion = booking.conversion
         updated.category = category
         updated.accountID = accountID
         updated.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
-        updated.date = date
+        updated.date = money.date
         store.updateTransaction(updated)
-        dismiss()
+        if let error = store.lastError { money.error = error } else { dismiss() }
     }
 
     private func finishCalculation() {
-        if let value = AmountExpression.evaluate(amountText) { amountText = AmountExpression.formatted(value) }
+        if let value = AmountExpression.evaluate(money.amountText) { money.amountText = CurrencyMath.string(CurrencyMath.decimal(String(value)) ?? 0) }
         amountFocused = false
     }
 }

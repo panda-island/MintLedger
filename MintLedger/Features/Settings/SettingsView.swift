@@ -17,6 +17,11 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            Section("記帳偏好") {
+                NavigationLink { CurrencySettingsView() } label: {
+                    LabeledContent("幣別與匯率", value: store.snapshot.currencyCode)
+                }
+            }
             securitySection
             privacySection
             cloudBackupSection
@@ -58,7 +63,7 @@ struct SettingsView: View {
             }
             Section("關於") {
                 LabeledContent("版本", value: appVersion)
-                LabeledContent("資料格式", value: "MintLedger v1 JSON")
+                LabeledContent("資料格式", value: "MintLedger v2 JSON（相容 v1 備份）")
             }
         }
         .navigationTitle("設定")

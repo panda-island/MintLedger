@@ -53,6 +53,7 @@ struct LedgerAccount: Codable, Hashable, Identifiable, Sendable {
     var name: String
     var symbol: String
     var openingBalanceMinor: Int64 = 0
+    var openingReference: CurrencyReference? = nil
 
     static let defaults = [
         LedgerAccount(name: "現金", symbol: "banknote"),
@@ -70,6 +71,7 @@ struct LedgerTransaction: Codable, Hashable, Identifiable, Sendable {
     var note: String
     var date: Date
     var createdAt: Date = .now
+    var conversion: CurrencyConversion? = nil
 
     var signedAmountMinor: Int64 { kind == .income ? amountMinor : -amountMinor }
 }
@@ -78,6 +80,7 @@ struct Budget: Codable, Hashable, Identifiable, Sendable {
     var id: UUID = UUID()
     var category: LedgerCategory
     var limitMinor: Int64
+    var currencyReference: CurrencyReference? = nil
 }
 
 struct RecurringEntry: Codable, Hashable, Identifiable, Sendable {
@@ -96,10 +99,11 @@ struct RecurringEntry: Codable, Hashable, Identifiable, Sendable {
     var cadence: Cadence
     var nextDate: Date
     var isEnabled = true
+    var currencyReference: CurrencyReference? = nil
 }
 
 struct LedgerSnapshot: Codable, Hashable, Sendable {
-    var schemaVersion = 1
+    var schemaVersion = 2
     var transactions: [LedgerTransaction] = []
     var accounts: [LedgerAccount] = LedgerAccount.defaults
     var budgets: [Budget] = []
@@ -108,14 +112,36 @@ struct LedgerSnapshot: Codable, Hashable, Sendable {
     var updatedAt: Date = .now
 
     static var empty: LedgerSnapshot { LedgerSnapshot() }
+
+    enum CodingKeys: String, CodingKey {
+        case schemaVersion, transactions, accounts, budgets, recurringEntries, currencyCode, updatedAt
+    }
+}
+
+extension LedgerSnapshot {
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try values.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
+        transactions = try values.decode([LedgerTransaction].self, forKey: .transactions)
+        accounts = try values.decode([LedgerAccount].self, forKey: .accounts)
+        budgets = try values.decodeIfPresent([Budget].self, forKey: .budgets) ?? []
+        recurringEntries = try values.decodeIfPresent([RecurringEntry].self, forKey: .recurringEntries) ?? []
+        currencyCode = try values.decode(String.self, forKey: .currencyCode)
+        updatedAt = try values.decode(Date.self, forKey: .updatedAt)
+        if schemaVersion < 2 {
+            // V1 stored hundredths for every currency. V2 uses each ISO currency's
+            // own minor unit (JPY 0, USD/TWD 2, KWD 3), preserving old backup values.
+            for index in transactions.indices { transactions[index].amountMinor = try CurrencyMath.minor(Decimal(transactions[index].amountMinor) / 100, code: currencyCode) }
+            for index in accounts.indices { accounts[index].openingBalanceMinor = try CurrencyMath.minor(Decimal(accounts[index].openingBalanceMinor) / 100, code: currencyCode) }
+            for index in budgets.indices { budgets[index].limitMinor = try CurrencyMath.minor(Decimal(budgets[index].limitMinor) / 100, code: currencyCode) }
+            for index in recurringEntries.indices { recurringEntries[index].amountMinor = try CurrencyMath.minor(Decimal(recurringEntries[index].amountMinor) / 100, code: currencyCode) }
+            schemaVersion = 2
+        }
+    }
 }
 
 extension Int64 {
     func currency(code: String) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = code
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: Double(self) / 100)) ?? "\(self / 100)"
+        CurrencyMath.display(CurrencyMath.major(self, code: code), code: code)
     }
 }

@@ -24,6 +24,8 @@ struct QuickExpenseIntent: AppIntent {
     @Parameter(title: "金額") var amount: Double
     @Parameter(title: "分類", default: .food) var category: IntentCategory
     @Parameter(title: "備註", default: "快速記帳") var note: String
+    @Parameter(title: "原始幣別（留空使用主要幣別）") var currencyCode: String?
+    @Parameter(title: "自訂匯率（選填）") var exchangeRate: Double?
 
     init() { amount = 100; category = .food; note = "快速記帳" }
     init(amount: Double, category: IntentCategory = .food, note: String = "快速記帳") {
@@ -33,15 +35,24 @@ struct QuickExpenseIntent: AppIntent {
     }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        guard amount > 0 else { throw $amount.needsValueError("請輸入大於 0 的金額") }
+        guard amount.isFinite, amount > 0, let decimalAmount = CurrencyMath.decimal(String(amount)) else { throw $amount.needsValueError("請輸入有效且大於 0 的金額") }
+        let base = try SharedLedgerStorage.load().currencyCode
+        let code = currencyCode?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        let source = (code?.isEmpty == false ? code : nil) ?? base
+        let date = Date.now
+        let manual = exchangeRate.flatMap { CurrencyMath.decimal(String($0)) }
+        if let exchangeRate, (!exchangeRate.isFinite || exchangeRate <= 0) { throw CurrencyError.invalidAmount }
+        let booking = try await ExchangeRateService.shared.booking(amount: decimalAmount, from: source, to: base, date: date, manualRate: manual)
         try SharedLedgerStorage.append(
             kind: .expense,
-            amountMinor: Int64((amount * 100).rounded()),
+            amountMinor: booking.amountMinor,
             category: category.ledgerCategory,
             accountID: nil,
-            note: note
+            note: note,
+            date: date,
+            conversion: booking.conversion
         )
         WidgetCenter.shared.reloadAllTimelines()
-        return .result(dialog: "已記錄 \(amount) 元支出")
+        return .result(dialog: "已記錄 \(source) \(amount) 支出，換算為 \(base) 入帳")
     }
 }

@@ -24,8 +24,9 @@ enum NetWorthRange: String, CaseIterable, Identifiable {
 struct NetWorthPoint: Identifiable {
     let date: Date
     let amountMinor: Int64
+    var currencyCode = "TWD"
     var id: Date { date }
-    var amount: Double { Double(amountMinor) / 100 }
+    var amount: Double { CurrencyMath.double(amountMinor, code: currencyCode) }
 }
 
 struct NetWorthTimeline {
@@ -84,7 +85,7 @@ struct NetWorthTimeline {
                 balance += transactions[index].signedAmountMinor
                 index += 1
             }
-            result.append(NetWorthPoint(date: date, amountMinor: balance))
+            result.append(NetWorthPoint(date: date, amountMinor: balance, currencyCode: snapshot.currencyCode))
         }
         points = result
     }

@@ -312,7 +312,7 @@ private struct MonthSummaryHeader: View {
                 MonthlyMetricCard(title: "支出", amount: group.expenseMinor, icon: "arrow.up.right", color: .red, currencyCode: currencyCode)
                 MonthlyMetricCard(title: "淨額", amount: group.incomeMinor - group.expenseMinor, icon: "equal", color: .mintLedger, currencyCode: currencyCode)
             }
-            MonthSummaryChart(group: group)
+            MonthSummaryChart(group: group, currencyCode: currencyCode)
                 .frame(height: 115)
                 .accessibilityLabel("\(group.month.ledgerMonthText) 收入、支出與淨額圖表")
             Text("在此月份標題左右滑動，可切換月份")
@@ -353,6 +353,7 @@ private struct MonthlyMetricCard: View {
 
 private struct MonthSummaryChart: View {
     let group: TransactionMonthGroup
+    let currencyCode: String
 
     private var values: [(title: String, amount: Int64)] {
         [("收入", group.incomeMinor), ("支出", group.expenseMinor), ("淨額", group.incomeMinor - group.expenseMinor)]
@@ -360,7 +361,7 @@ private struct MonthSummaryChart: View {
 
     var body: some View {
         Chart(values, id: \.title) { value in
-            BarMark(x: .value("項目", value.title), y: .value("金額", value.amount))
+            BarMark(x: .value("項目", value.title), y: .value("金額", CurrencyMath.double(value.amount, code: currencyCode)))
                 .foregroundStyle(color(for: value.title))
                 .cornerRadius(4)
         }

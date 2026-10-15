@@ -74,9 +74,11 @@ enum SharedLedgerStorage {
         category: LedgerCategory,
         accountID: UUID?,
         note: String,
-        date: Date = .now
+        date: Date = .now,
+        conversion: CurrencyConversion? = nil
     ) throws {
         var snapshot = try load()
+        guard conversion == nil || conversion?.baseCurrencyCode == snapshot.currencyCode else { throw CurrencyError.currencyChanged }
         let resolvedAccount = accountID ?? snapshot.accounts.first?.id ?? LedgerAccount.defaults[0].id
         if snapshot.accounts.isEmpty { snapshot.accounts = LedgerAccount.defaults }
         snapshot.transactions.append(LedgerTransaction(
@@ -85,7 +87,8 @@ enum SharedLedgerStorage {
             category: category,
             accountID: resolvedAccount,
             note: note,
-            date: date
+            date: date,
+            conversion: conversion
         ))
         snapshot.updatedAt = .now
         try save(snapshot)

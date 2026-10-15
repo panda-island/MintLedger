@@ -77,9 +77,14 @@ final class PhoneWatchSyncService: NSObject, WCSessionDelegate {
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            store?.addTransactionIfNeeded(transaction)
-            sendSnapshot()
-            replyHandler?(snapshotReply(accepted: true))
+            do {
+                guard let store else { throw CurrencyError.dataChanged }
+                try await store.addTransactionIfNeeded(transaction)
+                sendSnapshot()
+                replyHandler?(snapshotReply(accepted: true))
+            } catch {
+                replyHandler?(["accepted": false, "error": error.localizedDescription])
+            }
         }
     }
 

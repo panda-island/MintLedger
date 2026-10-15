@@ -5,6 +5,8 @@ MintLedger 是一款離線優先、以繁體中文設計的 iPhone 與 Apple Wat
 ## 功能
 
 - 收入／支出、分類、帳戶、備註與日期管理
+- 多幣別記帳：在設定選主要幣別，以交易日期的 Frankfurter 每日參考匯率換算，亦可自訂實際成交匯率；完整保存原幣金額、匯率日期與首次入帳資訊，支援 JPY／USD／KWD 等不同小數精度
+- 切換主要幣別會換算既有帳目、期初餘額及定期交易設定，先保留本機備份；換算失敗不變更帳本。v2 備份相容舊版 v1 備份，CSV 亦包含原幣與匯率欄位
 - 本月收支、總資產、完整每日支出圖表與分類圓餅圖
 - 淨資產時間軸趨勢，提供 1 個月／3 個月／1 年／全部範圍，可點選日期查看累計淨資產；依帳戶初始餘額與歷史收支重算，支援負餘額
 - 定期交易資料模型與到期自動入帳
@@ -42,6 +44,8 @@ open MintLedger.xcodeproj
 > 無簽章 IPA 無法直接安裝，iCloud、App 內購買與 Widget App Group 也必須使用包含相應權限的正式 provisioning profile。沒有 Mac 時，可用 GitHub Actions 的 macOS runner 封存、簽署及上傳 App Store Connect。
 
 ## 隱私
+
+查詢匯率使用 [Frankfurter](https://frankfurter.dev/) 的免費 API，只傳送幣別代碼及查詢日期，不傳送金額、備註或帳戶資料。匯率為每日參考價，非銀行即時報價；已記錄的匯率不會隨行情自動變動，離線時可輸入自訂匯率。
 
 MintLedger 沒有分析或廣告 SDK。主 App、捷徑與 Widget 只透過 App Group 分享本機 JSON，Apple Watch 與 iPhone 之間則使用 Apple 的 WatchConnectivity 傳輸帳本快照與新增帳目；使用免費雲端備份時，完整備份只會上傳到目前使用者自己的 CloudKit 私人資料庫，並占用該使用者的 iCloud 配額。帳本資料使用 `completeUntilFirstUserAuthentication` 檔案保護，使使用者開機後首次解鎖後，鎖定畫面的捷徑仍能新增交易。
 

@@ -25,19 +25,32 @@ struct WatchDashboardView: View {
                 }
 
                 Section("近期明細") {
+                    if !store.pendingTransactions.isEmpty {
+                        Text("\(store.pendingTransactions.count) 筆待手機確認；其他主要幣別的未確認帳目暫不列入總資產。")
+                            .font(.caption2).foregroundStyle(.secondary)
+                        Button("重試同步") { store.retrySync() }
+                    }
+                    if let error = store.lastError {
+                        Text(error).font(.caption2).foregroundStyle(.orange)
+                    }
                     if store.recentTransactions.isEmpty {
                         Text("尚無帳目")
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(store.recentTransactions) { transaction in
-                            WatchTransactionRow(
-                                title: transaction.note.isEmpty ? transaction.category.title : transaction.note,
-                                category: transaction.category.title,
-                                symbol: transaction.category.symbol,
-                                amount: transaction.amountMinor.currency(code: store.snapshot.currencyCode),
-                                isIncome: transaction.kind == .income,
-                                date: transaction.date
-                            )
+                            VStack(alignment: .leading, spacing: 2) {
+                                WatchTransactionRow(
+                                    title: transaction.note.isEmpty ? transaction.category.title : transaction.note,
+                                    category: transaction.category.title,
+                                    symbol: transaction.category.symbol,
+                                    amount: transaction.amountMinor.currency(code: transaction.conversion?.baseCurrencyCode ?? store.snapshot.currencyCode),
+                                    isIncome: transaction.kind == .income,
+                                    date: transaction.date
+                                )
+                                if let conversion = transaction.conversion, conversion.originalCurrencyCode != store.snapshot.currencyCode {
+                                    Text("原幣 \(conversion.originalCurrencyCode) \(conversion.originalAmount)").font(.caption2).foregroundStyle(.secondary)
+                                }
+                            }
                         }
                     }
                 }

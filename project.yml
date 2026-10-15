@@ -11,8 +11,8 @@ settings:
     SWIFT_VERSION: "5.0"
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
-    CURRENT_PROJECT_VERSION: 26
-    MARKETING_VERSION: 1.9.0
+    CURRENT_PROJECT_VERSION: 27
+    MARKETING_VERSION: 1.10.0
     ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
 targets:
   MintLedger:
@@ -46,6 +46,8 @@ targets:
     sources:
       - path: MintLedgerWidget
       - path: MintLedger/Core/Models.swift
+      - path: MintLedger/Core/CurrencyMath.swift
+      - path: MintLedger/Core/ExchangeRateService.swift
       - path: MintLedger/Core/SharedLedgerStorage.swift
       - path: MintLedger/Intents/QuickExpenseIntent.swift
     settings:
@@ -63,6 +65,11 @@ targets:
       - path: MintLedgerWatch
       - path: MintLedger/Core/Models.swift
       - path: MintLedger/Core/WatchSyncProtocol.swift
+      - path: MintLedger/Core/CurrencyMath.swift
+      - path: MintLedger/Core/ExchangeRateService.swift
+      - path: MintLedger/Core/AmountExpression.swift
+      - path: MintLedger/Core/CurrencyEntryModel.swift
+      - path: MintLedger/Features/Transactions/CurrencyConversionFields.swift
       - path: MintLedger/Core/WatchPasscodeLockService.swift
       - path: MintLedger/Resources
         buildPhase: resources

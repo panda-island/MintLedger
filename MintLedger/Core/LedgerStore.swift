@@ -65,23 +65,62 @@ final class LedgerStore {
         category: LedgerCategory,
         accountID: UUID,
         note: String,
-        date: Date
+        date: Date,
+        conversion: CurrencyConversion? = nil
     ) {
+        guard conversion == nil || conversion?.baseCurrencyCode == snapshot.currencyCode else {
+            lastError = CurrencyError.currencyChanged.localizedDescription
+            return
+        }
         snapshot.transactions.append(LedgerTransaction(
             kind: kind,
             amountMinor: amountMinor,
             category: category,
             accountID: accountID,
             note: note.trimmingCharacters(in: .whitespacesAndNewlines),
-            date: date
+            date: date,
+            conversion: conversion
         ))
         persist()
     }
 
-    func addTransactionIfNeeded(_ transaction: LedgerTransaction) {
+    func addTransactionIfNeeded(_ transaction: LedgerTransaction) async throws {
         guard !snapshot.transactions.contains(where: { $0.id == transaction.id }) else { return }
-        snapshot.transactions.append(transaction)
-        persist()
+        var resolved = transaction
+        let target = snapshot.currencyCode
+        if let conversion = transaction.conversion, conversion.baseCurrencyCode != target {
+            let pending = LedgerSnapshot(transactions: [transaction], accounts: [], currencyCode: conversion.baseCurrencyCode)
+            resolved = try await CurrencyRebaser.rebase(pending, to: target).transactions[0]
+            guard snapshot.currencyCode == target else { throw CurrencyError.currencyChanged }
+        }
+        guard !snapshot.transactions.contains(where: { $0.id == transaction.id }) else { return }
+        var updated = snapshot
+        updated.transactions.append(resolved)
+        updated.updatedAt = .now
+        try SharedLedgerStorage.save(updated)
+        snapshot = updated
+        lastError = nil
+        try? LocalBackupService.rotate(snapshot: updated)
+        savePulse += 1
+        NotificationCenter.default.post(name: .ledgerStoreDidPersist, object: nil)
+    }
+
+    func changeBaseCurrency(to code: String) async throws {
+        let original = snapshot
+        guard original.currencyCode != code else { return }
+        var converted = try await CurrencyRebaser.rebase(original, to: code)
+        var disk = try SharedLedgerStorage.load()
+        // ISO8601 persistence truncates subsecond updatedAt, so compare content.
+        disk.updatedAt = original.updatedAt
+        guard snapshot == original, disk == original else { throw CurrencyError.dataChanged }
+        // Keep a recoverable copy and commit only once all rates and amounts validate.
+        try LocalBackupService.rotate(snapshot: original)
+        converted.updatedAt = .now
+        try SharedLedgerStorage.save(converted)
+        snapshot = converted
+        lastError = nil
+        savePulse += 1
+        NotificationCenter.default.post(name: .ledgerStoreDidPersist, object: nil)
     }
 
     func deleteTransactions(ids: Set<UUID>) {
@@ -152,14 +191,19 @@ final class LedgerStore {
     }
 
     func csvData() -> Data {
-        var lines = ["date,type,amount,category,account,note"]
+        var lines = ["date,type,amount,category,account,note,currency,original_currency,original_amount,exchange_rate,exchange_rate_date,exchange_rate_source,booked_currency,booked_amount"]
         let formatter = ISO8601DateFormatter()
         let accounts = Dictionary(uniqueKeysWithValues: snapshot.accounts.map { ($0.id, $0.name) })
         for item in transactions {
             let fields = [
                 formatter.string(from: item.date), item.kind.rawValue,
-                String(format: "%.2f", Double(item.amountMinor) / 100), item.category.title,
-                accounts[item.accountID] ?? "", item.note
+                CurrencyMath.string(item.amountMinor, code: snapshot.currencyCode), item.category.title,
+                accounts[item.accountID] ?? "", item.note, snapshot.currencyCode,
+                item.conversion?.originalCurrencyCode ?? snapshot.currencyCode,
+                item.conversion?.originalAmount ?? CurrencyMath.string(item.amountMinor, code: snapshot.currencyCode),
+                item.conversion?.rate ?? "1", item.conversion?.rateDate ?? "",
+                item.conversion?.rateSource ?? "相同幣別", item.conversion?.booked.currencyCode ?? snapshot.currencyCode,
+                item.conversion.map { CurrencyMath.string($0.booked.amountMinor, code: $0.booked.currencyCode) } ?? CurrencyMath.string(item.amountMinor, code: snapshot.currencyCode)
             ].map { "\"\($0.replacingOccurrences(of: "\"", with: "\"\""))\"" }
             lines.append(fields.joined(separator: ","))
         }

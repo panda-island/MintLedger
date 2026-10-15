@@ -19,7 +19,7 @@ struct DashboardView: View {
         var day = interval.start
         var result: [DailyExpense] = []
         while day <= lastDay {
-            result.append(DailyExpense(date: day, amount: Double(totals[day, default: 0]) / 100))
+            result.append(DailyExpense(date: day, amount: CurrencyMath.double(totals[day, default: 0], code: store.snapshot.currencyCode)))
             guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
             day = next
         }
